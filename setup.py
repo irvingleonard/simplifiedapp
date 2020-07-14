@@ -12,6 +12,7 @@ import simplifiedapp
 setuptools.setup(
 	url = 'https://github.com/irvingleonard/simplifiedapp',
 	author = 'Irving Leonard',
+	author_email = 'irvingleonard@gmail.com',
 	license='BSD 2-Clause "Simplified" License',
 	classifiers = [
 		'Development Status :: 4 - Beta',
