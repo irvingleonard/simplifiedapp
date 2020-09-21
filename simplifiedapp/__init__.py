@@ -17,7 +17,7 @@ import pathlib
 import pprint
 import sys
 
-__version__ = '0.5.1'
+__version__ = '0.6.0'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,13 +27,119 @@ DEFAULT_LOG_PARAMETERS = {
 }
 PPRINT_WIDTH = 270
 OS_FILES = ('.DS_Store')
+
+######################## I/O Classes ########################
+
+class BaseFile():
+	'''Parent class for all modules
+	All the formats should inherit from this one and it shouldn't be instantiated directly.
+	'''
+	
+	def __init__(self, string_, mode = 'r', **kwargs):
+		'''Init magic
+		Using the argparse builtin file handling
+		'''
+		
+		super().__init__()
+		self.file = argparse.FileType(mode, **kwargs)(string_)
+	
+	def __getattr__(self, name):
+		'''Getattr magic
+		Used to lazy load the content in the file
+		'''
+		
+		if name == 'content':
+			LOGGER.debug('Processing input %s', self.file.name)
+			value = self._get_content()
+			self.__setattr__(name, value)
+			return value
+		else:
+			raise AttributeError(name)
+	
+	def __or__(self, other):
+		'''Update
+		"Merge" the content of both files and return a dict
+		'''
+		
+		result = self.content.copy()
+		result.update(other.content)
+		return result
+		
+	def __ror__(self, other):
+		'''Reflected update
+		Update a builtin dict (or similar) and return a dict
+		'''
+		
+		result = other.copy()
+		result.update(self.content)
+		return result
+
+	def __repr__(self):
+		return self.file.name
+		
+	def __str__(self):
+		return self._encode_content()
+
+
+class ConfFile(BaseFile):
+	def _get_content(self):
+		LOGGER.debug('Loading config (ini) data')
+		config = configparser.ConfigParser()
+		config.optionxform = str
+		config.read_file(self.file)
+		values = {}
+		for section, content in config.items():
+			if section == 'DEFAULT':
+				LOGGER.debug('Adding settings from default section')
+				values.update({key : value for key, value in content.items()})
+			else:
+				LOGGER.debug('Adding settings from section %s', section)
+				values[section] = {key : value for key, value in content.items()}
+		return values
+
+
+class JSONFile(BaseFile):
+	def _get_content(self):
+		LOGGER.debug('Loading JSON data')
+		return json.load(self.file)
+
+
+class InputFiles(argparse.Action):
+	
+	_SUPPORTED_FORMATS = {
+		'conf'	: ConfFile,
+		'json'	: JSONFile,
+	}
+	
+	def __init__(self, option_strings, dest, nargs = None, **kwargs):
+		if (nargs is None) or not isinstance(nargs, int) or (nargs != 2):
+			raise ValueError('InputFile requires exactly 2 arguments (file path & file format)')
+		
+		super().__init__(option_strings, dest, nargs = nargs, **kwargs)
+	
+	def __call__(self, parser, namespace, values, option_string=None):
+		reported_format = values[1]
+		if reported_format.lower() not in self._SUPPORTED_FORMATS:
+			raise ValueError('Input file format not supported: {}'.format(reported_format))
+		item = self._SUPPORTED_FORMATS[reported_format.lower()](values[0])
+		items = getattr(namespace, self.dest, None)
+		if items is None:
+			items = []
+		items.append(item)
+		setattr(namespace, self.dest, items)
+		
+	def __or__(self, other):
+		return self
+
+
+######################## End of I/O Classes ########################
+
 BUILTIN_ARGPARSE_OPTIONS = {
 	'--log-level'		: {'choices' : ['notset', 'debug', 'info', 'warning', 'error', 'critical'], 'default' : 'info', 'help' : 'minimum severity of the messages to be logged'},
 	'--log-to-syslog'	: {'action' : 'store_true', 'default' : False, 'help' : 'send logs to syslog.'},
-	'--config-file'		: {'default' : argparse.SUPPRESS, 'help' : 'read this parameters from a configuration file'},
+	'--input-file'		: {'action' : InputFiles, 'nargs' : 2, 'default' : argparse.SUPPRESS, 'help' : 'read parameters from a file or standard input (using the "-" special name)'},
 	'--json'			: {'action' : 'store_true', 'default' : False, 'help' : 'output a JSON object as a string'},
 }
-
 
 class BaseCLI(metaclass = abc.ABCMeta):
 	'''Abstract class for CLI implementation.
@@ -98,25 +204,25 @@ def _populate_argparse_parser(argument_parser, parser_content):
 				if isinstance(value, tuple):
 					subparsers_info, subparsers_map = value
 					subparsers_info['dest'] = 'func'
-					LOGGER.debug('Adding subparsers to parser %s with: %s', argument_parser, subparsers_info)
+# 					LOGGER.warning('Adding subparsers to parser %s with: %s', argument_parser, subparsers_info)
 					subparsers = argument_parser.add_subparsers(**subparsers_info)
 					_populate_argparse_parser(subparsers, subparsers_map)
 				else:
 					raise ValueError('The argparser value is not supported: {}'.format(parser_content))
 			else:
-				LOGGER.debug('Adding defaults to parser %s: %s', argument_parser, value)
+# 				LOGGER.warning('Adding defaults to parser %s: %s', argument_parser, value)
 				argument_parser.set_defaults(**value)
 		elif isinstance(key, str):
 			if isinstance(value, dict):
-				LOGGER.debug('Adding argument %s with: %s', key, value)
+# 				LOGGER.warning('Adding argument %s with: %s', key, value)
 				argument_parser.add_argument(key, **value)
 			elif isinstance(value, tuple):
 				subparser_info, subparser_arguments = value
-				LOGGER.debug('Adding subparser %s with: %s', key, subparser_info)
+# 				LOGGER.warning('Adding subparser %s with: %s', key, subparser_info)
 				subparser = argument_parser.add_parser(key, **subparser_info)
 				_populate_argparse_parser(subparser, subparser_arguments)
 			elif issubclass(value, BaseCLI):
-				LOGGER.debug('Adding BaseCLI %s as %s', value, key)
+# 				LOGGER.warning('Adding BaseCLI %s as %s', value, key)
 				subparser = argument_parser.add_parser(key)
 				value._build_argparser(subparser)
 			else:
@@ -158,7 +264,7 @@ def build_argparse_parser(module_object, parent_parser = None, parser_content = 
 		parser_content = BUILTIN_ARGPARSE_OPTIONS.copy()
 	else:
 		parser_content.update(BUILTIN_ARGPARSE_OPTIONS)
-	LOGGER.debug('Adding content to argparser: %s <- %s', argument_parser, parser_content)
+# 	LOGGER.warning('Adding content to argparser: %s <- %s', argument_parser, parser_content)
 	argument_parser = _populate_argparse_parser(argument_parser, parser_content)
 	
 	return argument_parser
@@ -195,30 +301,6 @@ def files_in_module_dir(module, dir_name, exclude = OS_FILES):
 			LOGGER.warning('%s is not a file or directory', element.resolve())
 		
 	return result
-
-def load_configuration_from_file(config_file):
-	'''Load configuration settings from file.
-	It creates a dictionary from an ini-type configuration file's settings. This disable the possibility of having a setting in "DEFAULT" with the same name as another section on the file. It's intended to be used by the "main" function.
-	
-	ToDo: Documentation
-	'''
-	
-	config_file = pathlib.Path(config_file)
-	if config_file.is_file():
-		config = configparser.ConfigParser()
-		config.optionxform = str
-		LOGGER.debug('Reading config file %s', config_file)
-		config.read(config_file)
-		configuration = {}
-		for section, content in config.items():
-			if section == 'DEFAULT':
-				configuration.update({key : value for key, value in content.items()})
-			else:
-				configuration[section] = {key : value for key, value in content.items()}
-		return configuration
-	else:
-		LOGGER.warning('Unable to load configuration from %s', str(config_file))
-		return {}
 
 def main(argparser_like, module_name = '__main__'):
 	'''Simplified run of an app.
@@ -263,27 +345,23 @@ def main(argparser_like, module_name = '__main__'):
 	logging.basicConfig(**log_parameters)
 	LOGGER.debug('Logging configured  with: %s', log_parameters)
 	
-	if hasattr(args, 'config_file'):
-		configurations = load_configuration_from_file(args.config_file)
-	else:
-		configurations = {}
-		
-	if len(configurations):
-		LOGGER.debug('Configurations loaded from file: %s', configurations)
-	else:
-		LOGGER.debug('No configurations were loaded from file')
+	complete_input = {}
+	if hasattr(args, 'input_file'):
+		for input_ in args.input_file:
+			LOGGER.debug('Merging values from %s', input_)
+			complete_input = complete_input | input_
 	
 	vars_args = vars(args)	
 	LOGGER.debug('Adding command line parameters to configurations: %s', vars_args)
-	configurations.update(vars_args)
+	complete_input.update(vars_args)
 	
 	if hasattr(args, '_class'):
 		if issubclass(args._class, BaseCLI):
-			result = args._class(**configurations)._run_cli(**configurations)
+			result = args._class(**complete_input)._run_cli(**complete_input)
 		else:
 			raise ValueError('Your class should inherit from BaseCLI')
 	elif hasattr(args, '_func'):
-		result = args._func(**configurations)
+		result = args._func(**complete_input)
 	else:
 		raise RuntimeError('No executable/callable was found')
 

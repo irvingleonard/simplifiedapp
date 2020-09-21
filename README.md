@@ -1,6 +1,8 @@
 # simplifiedapp
 
-Handling the biolerplate code for your python project. By keeping some simple standards you can leverage this module to make some boilerplate function for you.
+Simple development scheme and style for your CLI app.
+
+By using this module and following its ways you can get all the input and output related code out of your way. The concept is very simple: there will be a "complete_input" dictionary that will be fed to your code and the result will be pushed to the output requested. The complete_input dictionary will be built from several input sources such as input files, standard input, and runtime switches.
 
 The CLI helpers can be used in the class mode or the function mode. Also, it can be implemented on a regular python module or a single file script/module. The combination of all that would yield four different possibilities. This documentation covers two, and the other two can be derived from there.
 
@@ -12,7 +14,7 @@ The expected format is:
 - the first line in the docstring should be a simple description of your module, just a couple words
 - the second line should include a longer explanation of what the module does
 
-You shouldn't use strict line length for this lines (like [PEP 8](https://www.python.org/dev/peps/pep-0008/) suggests) or if you do, then make the longer description fit in a single line.
+You shouldn't use strict line length for this lines (like [PEP 8](https://www.python.org/dev/peps/pep-0008/) suggests) or if you do, make each description fit in a single line.
 
 You should also use the `__version__` variable in your module following [PEP 396](https://www.python.org/dev/peps/pep-0396/), which is picked up by the code and will be leverage later by different tools.
 
