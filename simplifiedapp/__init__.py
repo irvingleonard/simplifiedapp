@@ -73,6 +73,9 @@ class BaseFile(BaseValues):
 		
 		self.file = argparse.FileType(mode, **kwargs)(string_)
 	
+	def __del__(self):
+		self.file.close()
+	
 	def __getattr__(self, name):
 		'''Getattr magic
 		Used to lazy load the content in the file
