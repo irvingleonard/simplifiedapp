@@ -9,6 +9,7 @@ ToDo:
 import abc
 import argparse
 import configparser
+import inspect
 import json
 import logging
 import logging.handlers
@@ -233,7 +234,7 @@ def _populate_argparse_parser(argument_parser, parser_content):
 # 				LOGGER.warning('Adding subparser %s with: %s', key, subparser_info)
 				subparser = argument_parser.add_parser(key, **subparser_info)
 				_populate_argparse_parser(subparser, subparser_arguments)
-			elif issubclass(value, BaseCLI):
+			elif inspect.isclass(value) and issubclass(value, BaseCLI):
 # 				LOGGER.warning('Adding BaseCLI %s as %s', value, key)
 				subparser = argument_parser.add_parser(key)
 				value._build_argparser(subparser)
