@@ -17,7 +17,7 @@ import pathlib
 import pprint
 import sys
 
-__version__ = '0.6.0'
+__version__ = '0.6.1-dev0'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,32 +30,15 @@ OS_FILES = ('.DS_Store')
 
 ######################## I/O Classes ########################
 
-class BaseFile():
-	'''Parent class for all modules
-	All the formats should inherit from this one and it shouldn't be instantiated directly.
-	'''
+class BaseValues():
 	
-	def __init__(self, string_, mode = 'r', **kwargs):
+	def __init__(self, content):
 		'''Init magic
-		Using the argparse builtin file handling
+		Simply store the content for future use
 		'''
 		
-		super().__init__()
-		self.file = argparse.FileType(mode, **kwargs)(string_)
-	
-	def __getattr__(self, name):
-		'''Getattr magic
-		Used to lazy load the content in the file
-		'''
+		self.content = content
 		
-		if name == 'content':
-			LOGGER.debug('Processing input %s', self.file.name)
-			value = self._get_content()
-			self.__setattr__(name, value)
-			return value
-		else:
-			raise AttributeError(name)
-	
 	def __or__(self, other):
 		'''Update
 		"Merge" the content of both files and return a dict
@@ -70,9 +53,38 @@ class BaseFile():
 		Update a builtin dict (or similar) and return a dict
 		'''
 		
-		result = other.copy()
-		result.update(self.content)
-		return result
+		return BaseValues(other) | self
+		
+	def __repr__(self):
+		return repr(self.content)
+		
+	def __str__(self):
+		return str(self.content)
+
+class BaseFile(BaseValues):
+	'''Parent class for all modules
+	All the formats should inherit from this one and it shouldn't be instantiated directly.
+	'''
+	
+	def __init__(self, string_, mode = 'r', **kwargs):
+		'''Init magic
+		Using the argparse builtin file handling
+		'''
+		
+		self.file = argparse.FileType(mode, **kwargs)(string_)
+	
+	def __getattr__(self, name):
+		'''Getattr magic
+		Used to lazy load the content in the file
+		'''
+		
+		if name == 'content':
+			LOGGER.debug('Processing input %s', self.file.name)
+			value = self._get_content()
+			self.__setattr__(name, value)
+			return value
+		else:
+			raise AttributeError(name)
 
 	def __repr__(self):
 		return self.file.name
@@ -127,9 +139,6 @@ class InputFiles(argparse.Action):
 			items = []
 		items.append(item)
 		setattr(namespace, self.dest, items)
-		
-	def __or__(self, other):
-		return self
 
 
 ######################## End of I/O Classes ########################
