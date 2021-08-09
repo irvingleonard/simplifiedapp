@@ -32,5 +32,5 @@ setuptools.setup(
 	python_requires = '>=3.5',
 	packages = setuptools.find_packages(),
 	
-	**simplifiedapp.setuptools_get_metadata(simplifiedapp)
+	**simplifiedapp.object_metadata(simplifiedapp)
 )
