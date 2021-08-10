@@ -19,7 +19,7 @@ import re
 import sys
 import types
 
-__version__ = '0.7.0-beta1'
+__version__ = '0.7.0-beta2'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -197,14 +197,17 @@ def param_metadata(arg_name, arg_values, annotations, docstring):
 			arg_values['type'] = annotations[arg_name]
 		elif isinstance(annotations[arg_name], tuple) or isinstance(annotations[arg_name], list):
 			arg_values['choices'] = annotations[arg_name]
-	elif ('default' in arg_values) and (arg_values['default'] is not None) and (type(arg_values['default']) != str):
-		if isinstance(arg_values['default'], bool):
-			if arg_values['default']:
-				arg_values['action'] = 'store_false'
+	elif 'default' in arg_values:
+		if arg_values['default'] is None:
+			arg_values['default'] = argparse.SUPPRESS
+		elif type(arg_values['default']) != str:
+			if isinstance(arg_values['default'], bool):
+				if arg_values['default']:
+					arg_values['action'] = 'store_false'
+				else:
+					arg_values['action'] = 'store_true'
 			else:
-				arg_values['action'] = 'store_true'
-		else:
-			arg_values['type'] = type(arg_values['default'])
+				arg_values['type'] = type(arg_values['default'])
 
 	return arg_values
 
