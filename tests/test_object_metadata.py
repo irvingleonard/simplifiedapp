@@ -7,13 +7,13 @@ import unittest
 
 import simplifiedapp
 
-class TestDetection(unittest.TestCase):
+class TestObjectMetadata(unittest.TestCase):
 	'''
-	Tests for the setuptools_get_metadata function
+	Tests for the object_metadata function
 	'''
 	
 	def setUp(self):
-		self.metadata = simplifiedapp.setuptools_get_metadata(simplifiedapp)
+		self.metadata = simplifiedapp.object_metadata(simplifiedapp)
 	
 	def test_name(self):
 		'''
