@@ -422,7 +422,7 @@ def run_call(call_, complete_input, parent = None):
 		else:
 			callable_ = getattr(parent, callable_)
 
-	positional_args = [complete_input[key] for key in pos_args if key in complete_input]
+	positional_args = [complete_input[key] if key in complete_input else None for key in pos_args]
 	if (args is not None) and (args in complete_input) and (complete_input[args] is not None):
 		positional_args += complete_input[args]
 
