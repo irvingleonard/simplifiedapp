@@ -19,7 +19,7 @@ import re
 import sys
 import types
 
-__version__ = '0.7.0-beta6'
+__version__ = '0.7.0-beta7'
 
 # EARLY_DEBUG = True
 
@@ -250,7 +250,8 @@ def callable_args(callable_, call_ = '', skip_builtin = None):
 
 	if defaults is None:
 		defaults = []
-	req_args = {arg : {} for arg in args[:-len(defaults)] if arg not in ([] if skip_builtin is None else (skip_builtin,))}
+	req_args = {arg : {} for arg in args[:len(args) - len(defaults)] if arg not in ([] if skip_builtin is None else (skip_builtin,))}
+	# print('Got req_args {} from args {} and defaults {}'.format(req_args, args, defaults))
 	opt_args = {arg : {'default' : arg_default} for arg, arg_default in dict(zip(args[-len(defaults):], defaults)).items()}
 
 	if varargs is not None:

@@ -88,7 +88,10 @@ class TestClassArgs(unittest.TestCase):
 			True	: ({'title': 'FixturePositionalMethod methods'}, {
 				'a_method': (([], {}), {
 					None	: {},
-					False	: {'__simplifiedapp_': ((FixturePositionalMethod, (), None, (), None), ('a_method', ('a', 'b', 'c'), None, (), None))}
+					False	: {'__simplifiedapp_': ((FixturePositionalMethod, (), None, (), None), ('a_method', ('a', 'b', 'c'), None, (), None))},
+					'a'		: {},
+					'b'		: {},
+					'c'		: {},
 					}),
 				}),
 		}

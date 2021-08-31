@@ -35,6 +35,65 @@ class TestCallableArgs(unittest.TestCase):
 		}
 		self.assertDictEqual(expected_result, self.test_object(fixture_empty_function))
 
+	def test_function_w_positional_args(self):
+		'''
+		Test callable_args with function having positional arguments
+		'''
+		
+		def fixture_function_w_positional_args(a, b):
+			pass
+
+		expected_result = {
+			None	: {},
+			False	: {
+				'__simplifiedapp_': (fixture_function_w_positional_args, ('a', 'b'), None, (), None),
+			},
+			'a'		: {},
+			'b'		: {},
+
+		}
+		self.assertDictEqual(expected_result, self.test_object(fixture_function_w_positional_args))
+
+	def test_function_w_default_positional_args(self):
+		'''
+		Test callable_args with function having positional arguments and default values
+		'''
+		
+		def fixture_function_w_default_positional_args(a = 'a', bc = 'bc'):
+			pass
+
+		expected_result = {
+			None	: {},
+			False	: {
+				'__simplifiedapp_': (fixture_function_w_default_positional_args, ('a', 'bc'), None, (), None),
+			},
+			'-a'		: {'default': 'a'},
+			'--bc'		: {'default': 'bc'},
+
+		}
+		self.assertDictEqual(expected_result, self.test_object(fixture_function_w_default_positional_args))
+
+	def test_function_w_mixed_positional_args(self):
+		'''
+		Test callable_args with function having positional arguments and default values
+		'''
+		
+		def fixture_function_w_mixed_positional_args(a, b, cd = 'cd', ef = 'ef'):
+			pass
+
+		expected_result = {
+			None	: {},
+			False	: {
+				'__simplifiedapp_': (fixture_function_w_mixed_positional_args, ('a', 'b', 'cd', 'ef'), None, (), None),
+			},
+			'a'		: {},
+			'b'		: {},
+			'--cd'	: {'default': 'cd'},
+			'--ef'	: {'default': 'ef'},
+
+		}
+		self.assertDictEqual(expected_result, self.test_object(fixture_function_w_mixed_positional_args))
+
 	def test_function_w_args(self):
 		'''
 		Test callable_args with function containing a variable arguments parameter (*args)
@@ -53,6 +112,26 @@ class TestCallableArgs(unittest.TestCase):
 		}
 		self.assertDictEqual(expected_result, self.test_object(fixture_function_w_args))
 
+	def test_function_w_keyword_args(self):
+		'''
+		Test callable_args with function having keyword arguments
+		'''
+		
+		def fixture_function_w_keyword_args(*args, a = 'a', b = 1, cd = ('c', 'd')):
+			pass
+
+		expected_result = {
+			'args'	: {'action': 'extend', 'default': [], 'nargs': '*'},
+			'-a'	: {'default': 'a'},
+			'-b'	: {'default': 1, 'type': int},
+			'--cd'	: {'action': 'extend', 'default': [], 'nargs': '+'},
+			None	: {},
+			False	: {
+				'__simplifiedapp_': (fixture_function_w_keyword_args, (), 'args', ('a', 'b', 'cd'), None),
+			},
+		}
+		self.assertDictEqual(expected_result, self.test_object(fixture_function_w_keyword_args))
+
 	def test_function_w_kwargs(self):
 		'''
 		Test callable_args with function containing a variable keyword arguments parameter (*kwargs)
@@ -70,6 +149,27 @@ class TestCallableArgs(unittest.TestCase):
 
 		}
 		self.assertDictEqual(expected_result, self.test_object(fixture_function_w_kwargs))
+
+	def test_function_w_annotations(self):
+		'''
+		Test callable_args with function having annotated arguments
+		'''
+		
+		def fixture_function_w_annotations(a_str : str, an_int : int, a_float : float, some_choices : ['a', 'b', 'c']):
+			pass
+
+		expected_result = {
+			'a_str'			: {'type': str},
+			'an_int'		: {'type': int},
+			'a_float'		: {'type': float},
+			'some_choices'	: {'choices': ['a', 'b', 'c']},
+			None			: {},
+			False			: {
+				'__simplifiedapp_': (fixture_function_w_annotations, ('a_str', 'an_int', 'a_float', 'some_choices'), None, (), None),
+			},
+
+		}
+		self.assertDictEqual(expected_result, self.test_object(fixture_function_w_annotations))
 
 	def test_version(self):
 		'''
