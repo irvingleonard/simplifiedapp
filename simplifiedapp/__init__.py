@@ -19,7 +19,7 @@ import re
 import sys
 import types
 
-__version__ = '0.7.0-beta5'
+__version__ = '0.7.0-beta6'
 
 # EARLY_DEBUG = True
 
@@ -237,7 +237,6 @@ def callable_args(callable_, call_ = '', skip_builtin = None):
 	Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 	
 	ToDo:
-	- Make _call a tuple with 2 values: the callable object and the list of accepted parameters (or None, if **kwargs is accepted)
 	- Documentation
 	'''
 	
@@ -271,7 +270,7 @@ def callable_args(callable_, call_ = '', skip_builtin = None):
 	if call_ is not None:
 		if not call_:
 			call_ = callable_
-		arguments[False] = {'__simplifiedapp_' : (call_, varargs, varkw, tuple(args), tuple(kwonlyargs))}
+		arguments[False] = {'__simplifiedapp_' : (call_, tuple(args), varargs, tuple(kwonlyargs), varkw)}
 
 	arguments[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}
 	if 'version' in metadata:
@@ -413,8 +412,10 @@ def run_call(call_, complete_input, parent = None):
 
 	if len(call_) != 5:
 		raise ValueError('Malformed call tuple')
+	else:
+		LOGGER.debug('Running call with: %s', call_)
 
-	callable_, args, kwargs, pos_args, kw_args = call_
+	callable_, pos_args, args_name, kw_args, kwargs_name = call_
 
 	if isinstance(callable_, str):
 		if parent is None:
@@ -422,17 +423,20 @@ def run_call(call_, complete_input, parent = None):
 		else:
 			callable_ = getattr(parent, callable_)
 
-	positional_args = [complete_input[key] if key in complete_input else None for key in pos_args]
-	if (args is not None) and (args in complete_input) and (complete_input[args] is not None):
-		positional_args += complete_input[args]
+	positional_values = [complete_input[key] if key in complete_input else None for key in pos_args]
+	if (args_name is not None) and (args_name in complete_input) and (complete_input[args_name] is not None):
+		positional_values += complete_input[args_name]
 
-	keyword_args = {key : value for key, value in complete_input.items() if key in kw_args}
-	if (kwargs is not None) and (kwargs in complete_input) and (complete_input[kwargs] is not None):
-		for kwequal in complete_input[kwargs]:
+	keyword_values = {key : value for key, value in complete_input.items() if key in kw_args}
+	if (kwargs_name is not None) and (kwargs_name in complete_input) and (complete_input[kwargs_name] is not None):
+		for kwequal in complete_input[kwargs_name]:
 			key, value = kwequal.split('=', maxsplit = 1)
-			if key not in keyword_args:
-				keyword_args[key] = value
-	return callable_(*positional_args, **keyword_args)
+			if (key in pos_args) or (key in kw_args):
+				LOGGER.warning('Skipping %s for available switch: %s', kwargs_name, key)
+			else:
+				keyword_values[key] = value
+
+	return callable_(*positional_values, **keyword_values)
 
 
 def main(target = None, sys_argv = None):
