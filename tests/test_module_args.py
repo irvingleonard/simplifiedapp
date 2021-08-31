@@ -43,7 +43,7 @@ class TestModuleArgs(unittest.TestCase):
 			True	: ({'title': 'fixture_module_w_callable callables'}, {
 				'test_callable': (([], {}), {
 					None: {},
-					False: {'__simplifiedapp_': (fixture_module_w_callable.test_callable, 'args', 'kwargs', (), ())},
+					False: {'__simplifiedapp_': (fixture_module_w_callable.test_callable, (), 'args', (), 'kwargs')},
 					'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
 					'args': {'action': 'extend', 'default': [], 'nargs': '*'},
 				}),
@@ -73,11 +73,11 @@ class TestModuleArgs(unittest.TestCase):
 			True	: ({'title': 'fixture_module_w_class callables'}, {
 				'TestClass': (([], {}), {
 					None	: {},
-					False	: {'__simplifiedapp_': (fixture_module_w_class.TestClass, 'args', 'kwargs', (), ())},
+					False	: {'__simplifiedapp_': (fixture_module_w_class.TestClass, (), 'args', (), 'kwargs')},
 					True: ({'title': 'TestClass methods'}, {
 						'test_method': (([], {}), {
 							None	: {},
-							False: {'__simplifiedapp_': ((fixture_module_w_class.TestClass, 'args', 'kwargs', (), ()), ('test_method', 'args', 'kwargs', (), ()))},
+							False: {'__simplifiedapp_': ((fixture_module_w_class.TestClass, (), 'args', (), 'kwargs'), ('test_method', (), 'args', (), 'kwargs'))},
 							'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
 							'args': {'action': 'extend', 'default': [], 'nargs': '*'},
 							}),
@@ -104,7 +104,7 @@ class TestModuleArgs(unittest.TestCase):
 			True: ({'title': 'venv callables'}, {
 				'create': (([], {}), {
 					None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
-					False						: {'__simplifiedapp_' : (getattr(venv, 'create'), None, None, ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt', 'upgrade_deps'), ())},
+					False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
 					'--clear'					: {'action' : 'store_true', 'default' : False},
 					'--prompt'					: {'default' : argparse.SUPPRESS},
 					'--symlinks'				: {'action' : 'store_true', 'default' : False},
@@ -115,7 +115,7 @@ class TestModuleArgs(unittest.TestCase):
 				}),
 				'main': (([], {}), {
 					None		: {},
-					False		: {'__simplifiedapp_' : (getattr(venv, 'main'), None, None, ('args',), ())},
+					False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
 					'--args'	: {'default': argparse.SUPPRESS}
 				})
 			})

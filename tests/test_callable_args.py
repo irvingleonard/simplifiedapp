@@ -29,7 +29,7 @@ class TestCallableArgs(unittest.TestCase):
 		expected_result = {
 			None	: {},
 			False: {
-				'__simplifiedapp_': (fixture_empty_function, None, None, (), ()),
+				'__simplifiedapp_': (fixture_empty_function, (), None, (), None),
 			},
 
 		}
@@ -46,7 +46,7 @@ class TestCallableArgs(unittest.TestCase):
 		expected_result = {
 			None	: {},
 			False: {
-				'__simplifiedapp_': (fixture_function_w_args, 'args', None, (), ()),
+				'__simplifiedapp_': (fixture_function_w_args, (), 'args', (), None),
 			},
 			'args': {'action': 'extend', 'default': [], 'nargs': '*'},
 
@@ -64,7 +64,7 @@ class TestCallableArgs(unittest.TestCase):
 		expected_result = {
 			None	: {},
 			False: {
-				'__simplifiedapp_': (fixture_function_w_kwargs, None, 'kwargs', (), ()),
+				'__simplifiedapp_': (fixture_function_w_kwargs, (), None, (), 'kwargs'),
 			},
 			'--kwargs': {'action' : 'extend', 'default' : [], 'nargs' : '+', 'help' : '(Use the key=value format for each entry)'},
 
@@ -82,7 +82,7 @@ class TestCallableArgs(unittest.TestCase):
 
 		expected_result = {
 			None		: {},
-			False		: {'__simplifiedapp_': (fixture_versioned_function, None, None, (), ())},
+			False		: {'__simplifiedapp_': (fixture_versioned_function, (), None, (), None)},
 			'--version'	: {'action': 'version', 'version': '0.1'},
 		}
 		self.assertDictEqual(expected_result, self.test_object(fixture_versioned_function))
@@ -98,7 +98,7 @@ class TestCallableArgs(unittest.TestCase):
 		expected_result = {
 			None	: {},
 			False: {
-				'__simplifiedapp_': (fixture_complex_function, 'args', 'kwargs', ('simple_positional_parameter', 'a_str', 'an_int', 'parameter_w_default', 'parameter_w_options', 'a_bool'), ('keyword_parameter', '__', 'supressable_parameter')),
+				'__simplifiedapp_': (fixture_complex_function, ('simple_positional_parameter', 'a_str', 'an_int', 'parameter_w_default', 'parameter_w_options', 'a_bool'), 'args', ('keyword_parameter', '__', 'supressable_parameter'), 'kwargs'),
 			},
 			'--__': {'default': 'weird parameter name'},
 			'--a_bool'						: {'action': 'store_false', 'default' : True},

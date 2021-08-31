@@ -35,14 +35,14 @@ class TestRunCall(unittest.TestCase):
 		Test error: callable is str and no parent provided
 		'''
 
-		self.assertRaises(ValueError, self.test_object, ('a', None, None, (), ()), {})
+		self.assertRaises(ValueError, self.test_object, ('a', (), None, (), None), {})
 
 	def test_callable_str_w_parent(self):
 		'''
 		Test callable is str and parent is current module
 		'''
 
-		self.assertEqual('Ok from module root', self.test_object(('fixture_callable', None, None, (), ()), {}, parent = sys.modules[__name__]))
+		self.assertEqual('Ok from module root', self.test_object(('fixture_callable', (), None, (), None), {}, parent = sys.modules[__name__]))
 
 	def test_args_list(self):
 		'''
@@ -52,7 +52,7 @@ class TestRunCall(unittest.TestCase):
 		def fixture_args_list(*args):
 			return args
 
-		self.assertEqual(('1', 2), self.test_object((fixture_args_list, None, None, ('v1', 'v2'), ()), {'v1' : '1', 'v2' : 2}))
+		self.assertEqual(('1', 2), self.test_object((fixture_args_list, ('v1', 'v2'), None, (), None), {'v1' : '1', 'v2' : 2}))
 
 	def test_w_args_param(self):
 		'''
@@ -62,7 +62,7 @@ class TestRunCall(unittest.TestCase):
 		def fixture_function_w_args(*args):
 			return args
 
-		self.assertEqual(('v1', 2), self.test_object((fixture_function_w_args, 'args', None, (), ()), {'args' : ['v1', 2]}))
+		self.assertEqual(('v1', 2), self.test_object((fixture_function_w_args, (), 'args', (), None), {'args' : ['v1', 2]}))
 
 
 
@@ -74,7 +74,7 @@ class TestRunCall(unittest.TestCase):
 		def fixture_kwargs_list(**kwargs):
 			return kwargs
 
-		self.assertDictEqual({'v1' : '1', 'v2' : 2}, self.test_object((fixture_kwargs_list, None, None, (), ('v1', 'v2')), {'v1' : '1', 'v2' : 2}))
+		self.assertDictEqual({'v1' : '1', 'v2' : 2}, self.test_object((fixture_kwargs_list, (), None, ('v1', 'v2'), None), {'v1' : '1', 'v2' : 2}))
 
 
 	def test_w_kwargs_param(self):
@@ -85,5 +85,22 @@ class TestRunCall(unittest.TestCase):
 		def fixture_function_w_kwargs(**kwargs):
 			return kwargs
 
-		self.assertDictEqual({'v1': 'a', 'v2': '2'}, self.test_object((fixture_function_w_kwargs, None, 'kwargs', (), ()), {'kwargs' : ['v1=a', 'v2=2']}))
+		self.assertDictEqual({'v1': 'a', 'v2': '2'}, self.test_object((fixture_function_w_kwargs, (), None, (), 'kwargs'), {'kwargs' : ['v1=a', 'v2=2']}))
 
+	def test_w_redundant_kwargs_pos_param(self):
+		'''
+		Test complete_input with a redundant value for positional parameter as kwargs
+		'''
+
+		with self.assertLogs(simplifiedapp.LOGGER, level='WARNING') as cm:
+			self.test_object((fixture_callable, ('pos_arg',), None, (), 'kwargs'), {'pos_arg' : 'c', 'kwargs' : ['pos_arg=a']})
+			self.assertEqual(cm.output, ['WARNING:simplifiedapp:Skipping kwargs for available switch: pos_arg'])
+
+	def test_w_redundant_kwargs_kw_param(self):
+		'''
+		Test complete_input with a redundant value for keyword parameter as kwargs
+		'''
+
+		with self.assertLogs(simplifiedapp.LOGGER, level='WARNING') as cm:
+			self.test_object((fixture_callable, (), None, ('kw_arg',), 'kwargs'), {'kw_arg' : 'c', 'kwargs' : ['kw_arg=a']})
+			self.assertEqual(cm.output, ['WARNING:simplifiedapp:Skipping kwargs for available switch: kw_arg'])
