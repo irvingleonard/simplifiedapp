@@ -19,7 +19,7 @@ import re
 import sys
 import types
 
-__version__ = '0.7.0-beta7'
+__version__ = '0.7.0-beta8'
 
 # EARLY_DEBUG = True
 
@@ -33,6 +33,14 @@ DOCSTRING_FORMAT = re.compile('(?P<description>\A.+?$)(?:\n(?P<long_description>
 METADATA_TO_ARGPARSE = {'description' : 'description', 'long_description' : 'epilog'}
 PPRINT_WIDTH = 270
 OS_FILES = ('.DS_Store')
+
+try:
+	_parser = argparse.ArgumentParser()
+	_parser.add_argument("--foo", action="extend", nargs="+", type=str)
+except ValueError:
+	ADD_ARGUMENT_ACTION_EXTEND = False
+else:
+	ADD_ARGUMENT_ACTION_EXTEND = True
 
 ######################## I/O Classes ########################
 
@@ -215,12 +223,12 @@ def param_metadata(arg_name, arg_values, annotations, docstring):
 				else:
 					arg_values['action'] = 'store_true'
 			elif isinstance(arg_values['default'], (tuple, list)):
-				arg_values['action'] = 'extend'
+				arg_values['action'] = 'extend' if ADD_ARGUMENT_ACTION_EXTEND else 'append'
 				arg_values['default'] = []
 				if 'nargs' not in arg_values:
 					arg_values['nargs'] = '+'
 			elif isinstance(arg_values['default'], dict):
-				arg_values['action'] = 'extend'
+				arg_values['action'] = 'extend' if ADD_ARGUMENT_ACTION_EXTEND else 'append'
 				arg_values['nargs'] = '+'
 				arg_values['default'] = []
 				if 'help' not in arg_values:
@@ -507,12 +515,13 @@ def main(target = None, sys_argv = None):
 			arg_parser_data.update(callable_args(target))
 	except Exception as error:
 		raise ValueError("Main's target ({}) is not supported: {}".format(target, error))
-	if None not in arg_parser_data:
-		arg_parser_data[None] = {}
 
 	LOGGER.debug('Parser object tree is: %s', arg_parser_data)
 	# pprint.pprint(arg_parser_data)
-	args = build_parser(parser_content = arg_parser_data, argument_parser = DEFAULT_ARGUMENT_PARSER[0](*DEFAULT_ARGUMENT_PARSER[1], **(DEFAULT_ARGUMENT_PARSER[2] | arg_parser_data[None]))).parse_args(sys_argv)
+	keyword_args = DEFAULT_ARGUMENT_PARSER[2].copy()
+	if None in arg_parser_data:
+		keyword_args.update(arg_parser_data[None])
+	args = build_parser(parser_content = arg_parser_data, argument_parser = DEFAULT_ARGUMENT_PARSER[0](*DEFAULT_ARGUMENT_PARSER[1], **keyword_args)).parse_args(sys_argv)
 	
 	log_parameters = DEFAULT_LOG_PARAMETERS.copy()
 	

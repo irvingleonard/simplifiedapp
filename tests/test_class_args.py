@@ -115,7 +115,7 @@ class TestClassArgs(unittest.TestCase):
 					False		: {'__simplifiedapp_': ((FixturePositionalMethodwDefaults, (), None, (), None), ('a_method', ('a', 'number', 'list_'), None, (), None))},
 					'-a'		: {'default': 'a'},
 					'--number'	: {'default': 2, 'type': int},
-					'--list_'	: {'action': 'extend', 'default': [], 'nargs': '+'},
+					'--list_'	: {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'nargs': '+'},
 					}),
 				}),
 		}
@@ -137,10 +137,10 @@ class TestClassArgs(unittest.TestCase):
 				'a_method': (([], {}), {
 					None		: {},
 					False		: {'__simplifiedapp_': ((FixtureKeywordsMethod, (), None, (), None), ('a_method', (), 'args', ('a', 'number', 'list_'), None))},
-					'args'		: {'action': 'extend', 'default': [], 'nargs': '*'},
+					'args'		: {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'nargs': '*'},
 					'-a'		: {'default': 'a'},
 					'--number'	: {'default': 2, 'type': int},
-					'--list_'	: {'action': 'extend', 'default': [], 'nargs': '+'},
+					'--list_'	: {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'nargs': '+'},
 					}),
 				}),
 		}

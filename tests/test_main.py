@@ -91,8 +91,8 @@ class TestMain(unittest.TestCase):
 		Test with the builtin sys module
 		'''
 		
-		self.test_object('sys', ['exc_info'])
-		self.assertEqual('{}\n'.format(sys.exc_info()), mock_stdout.getvalue())
+		self.test_object('sys', ['get_coroutine_origin_tracking_depth'])
+		self.assertEqual('{}\n'.format(sys.get_coroutine_origin_tracking_depth()), mock_stdout.getvalue())
 
 	@unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
 	def test_run_target_parent_str(self, mock_stdout):

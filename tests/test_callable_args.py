@@ -107,7 +107,7 @@ class TestCallableArgs(unittest.TestCase):
 			False: {
 				'__simplifiedapp_': (fixture_function_w_args, (), 'args', (), None),
 			},
-			'args': {'action': 'extend', 'default': [], 'nargs': '*'},
+			'args': {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'nargs': '*'},
 
 		}
 		self.assertDictEqual(expected_result, self.test_object(fixture_function_w_args))
@@ -121,10 +121,10 @@ class TestCallableArgs(unittest.TestCase):
 			pass
 
 		expected_result = {
-			'args'	: {'action': 'extend', 'default': [], 'nargs': '*'},
+			'args'	: {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'nargs': '*'},
 			'-a'	: {'default': 'a'},
 			'-b'	: {'default': 1, 'type': int},
-			'--cd'	: {'action': 'extend', 'default': [], 'nargs': '+'},
+			'--cd'	: {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'nargs': '+'},
 			None	: {},
 			False	: {
 				'__simplifiedapp_': (fixture_function_w_keyword_args, (), 'args', ('a', 'b', 'cd'), None),
@@ -145,7 +145,7 @@ class TestCallableArgs(unittest.TestCase):
 			False: {
 				'__simplifiedapp_': (fixture_function_w_kwargs, (), None, (), 'kwargs'),
 			},
-			'--kwargs': {'action' : 'extend', 'default' : [], 'nargs' : '+', 'help' : '(Use the key=value format for each entry)'},
+			'--kwargs': {'action' : 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default' : [], 'nargs' : '+', 'help' : '(Use the key=value format for each entry)'},
 
 		}
 		self.assertDictEqual(expected_result, self.test_object(fixture_function_w_kwargs))
@@ -203,13 +203,13 @@ class TestCallableArgs(unittest.TestCase):
 			'--__': {'default': 'weird parameter name'},
 			'--a_bool'						: {'action': 'store_false', 'default' : True},
 			'--keyword_parameter'			: {'default': 'some value'},
-			'--kwargs'						: {'action' : 'extend', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
+			'--kwargs'						: {'action' : 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
 			'--parameter_w_default'			: {'default' : '3'},
 			'--parameter_w_options'			: {'choices': ['first', 'second', 'third', 'nope'], 'default' : 'first'},
 			'--supressable_parameter'		: {'default': argparse.SUPPRESS},
 			'a_str'							: {'type': str},
 			'an_int'						: {'type': int},
-			'args'							: {'action': 'extend', 'default' : [], 'nargs' : '*'},
+			'args'							: {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default' : [], 'nargs' : '*'},
 			'simple_positional_parameter'	: {},
 		}
 		self.assertDictEqual(expected_result, self.test_object(fixture_complex_function))

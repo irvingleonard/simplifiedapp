@@ -44,8 +44,8 @@ class TestModuleArgs(unittest.TestCase):
 				'test_callable': (([], {}), {
 					None: {},
 					False: {'__simplifiedapp_': (fixture_module_w_callable.test_callable, (), 'args', (), 'kwargs')},
-					'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
-					'args': {'action': 'extend', 'default': [], 'nargs': '*'},
+					'--kwargs': {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+					'args': {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'nargs': '*'},
 				}),
 			}),
 		}
@@ -78,12 +78,12 @@ class TestModuleArgs(unittest.TestCase):
 						'test_method': (([], {}), {
 							None	: {},
 							False: {'__simplifiedapp_': ((fixture_module_w_class.TestClass, (), 'args', (), 'kwargs'), ('test_method', (), 'args', (), 'kwargs'))},
-							'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
-							'args': {'action': 'extend', 'default': [], 'nargs': '*'},
+							'--kwargs': {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+							'args': {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'nargs': '*'},
 							}),
 						}),
-					'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
-					'args': {'action': 'extend', 'default': [], 'nargs': '*'}
+					'--kwargs': {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+					'args': {'action': 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'default': [], 'nargs': '*'}
 					}),
 				}),
 		}
@@ -96,32 +96,103 @@ class TestModuleArgs(unittest.TestCase):
 		
 		import venv
 
-		expected_result = {
-			None	: {
-				'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-				'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
-				},
-			True: ({'title': 'venv callables'}, {
-				'create': (([], {}), {
-					None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
-					False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
-					'--clear'					: {'action' : 'store_true', 'default' : False},
-					'--prompt'					: {'default' : argparse.SUPPRESS},
-					'--symlinks'				: {'action' : 'store_true', 'default' : False},
-					'--system_site_packages'	: {'action' : 'store_true', 'default' : False},
-					'--upgrade_deps'			: {'action' : 'store_true', 'default' : False},
-					'--with_pip'				: {'action' : 'store_true', 'default' : False},
-					'env_dir'					: {}
-				}),
-				'main': (([], {}), {
-					None		: {},
-					False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
-					'--args'	: {'default': argparse.SUPPRESS}
+		builtin_module_fixture = {
+			(3, 6)	: {
+				None	: {
+					'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
+					'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
+					},
+				True: ({'title': 'venv callables'}, {
+					'create': (([], {}), {
+						None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
+						False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt'), None, (), None)},
+						'--clear'					: {'action' : 'store_true', 'default' : False},
+						'--prompt'					: {'default' : argparse.SUPPRESS},
+						'--symlinks'				: {'action' : 'store_true', 'default' : False},
+						'--system_site_packages'	: {'action' : 'store_true', 'default' : False},
+						'--with_pip'				: {'action' : 'store_true', 'default' : False},
+						'env_dir'					: {}
+					}),
+					'main': (([], {}), {
+						None		: {},
+						False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
+						'--args'	: {'default': argparse.SUPPRESS}
+					})
 				})
-			})
+			},
+			(3, 7)	: {
+				None	: {
+					'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
+					'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
+					},
+				True: ({'title': 'venv callables'}, {
+					'create': (([], {}), {
+						None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
+						False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt'), None, (), None)},
+						'--clear'					: {'action' : 'store_true', 'default' : False},
+						'--prompt'					: {'default' : argparse.SUPPRESS},
+						'--symlinks'				: {'action' : 'store_true', 'default' : False},
+						'--system_site_packages'	: {'action' : 'store_true', 'default' : False},
+						'--with_pip'				: {'action' : 'store_true', 'default' : False},
+						'env_dir'					: {}
+					}),
+					'main': (([], {}), {
+						None		: {},
+						False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
+						'--args'	: {'default': argparse.SUPPRESS}
+					})
+				})
+			},
+			(3, 8)	: {
+				None	: {
+					'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
+					'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
+					},
+				True: ({'title': 'venv callables'}, {
+					'create': (([], {}), {
+						None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
+						False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt'), None, (), None)},
+						'--clear'					: {'action' : 'store_true', 'default' : False},
+						'--prompt'					: {'default' : argparse.SUPPRESS},
+						'--symlinks'				: {'action' : 'store_true', 'default' : False},
+						'--system_site_packages'	: {'action' : 'store_true', 'default' : False},
+						'--with_pip'				: {'action' : 'store_true', 'default' : False},
+						'env_dir'					: {}
+					}),
+					'main': (([], {}), {
+						None		: {},
+						False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
+						'--args'	: {'default': argparse.SUPPRESS}
+					})
+				})
+			},
+			(3, 9)	: {
+				None	: {
+					'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
+					'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
+					},
+				True: ({'title': 'venv callables'}, {
+					'create': (([], {}), {
+						None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
+						False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
+						'--clear'					: {'action' : 'store_true', 'default' : False},
+						'--prompt'					: {'default' : argparse.SUPPRESS},
+						'--symlinks'				: {'action' : 'store_true', 'default' : False},
+						'--system_site_packages'	: {'action' : 'store_true', 'default' : False},
+						'--upgrade_deps'			: {'action' : 'store_true', 'default' : False},
+						'--with_pip'				: {'action' : 'store_true', 'default' : False},
+						'env_dir'					: {}
+					}),
+					'main': (([], {}), {
+						None		: {},
+						False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
+						'--args'	: {'default': argparse.SUPPRESS}
+					})
+				})
+			},
 		}
 
-		self.assertDictEqual(expected_result, self.test_object(venv))
+		self.assertDictEqual(builtin_module_fixture[tuple(sys.version_info)[:2]], self.test_object(venv))
 
 	def test_version(self):
 		'''

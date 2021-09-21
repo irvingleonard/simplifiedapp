@@ -70,7 +70,7 @@ class TestParamMetadata(unittest.TestCase):
 		Testing defaults: tuple
 		'''
 		
-		expected_result = {'default' : [], 'action' : 'extend', 'nargs' : '+'}
+		expected_result = {'default' : [], 'action' : 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'nargs' : '+'}
 		self.assertDictEqual(expected_result, self.test_object('a', {'default' : ('v1', 2)}, {}, ''))
 
 	def test_default_tuple_w_nargs(self):
@@ -78,7 +78,7 @@ class TestParamMetadata(unittest.TestCase):
 		Testing defaults: tuple with nargs
 		'''
 		
-		expected_result = {'default' : [], 'action' : 'extend', 'nargs' : '*'}
+		expected_result = {'default' : [], 'action' : 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'nargs' : '*'}
 		self.assertDictEqual(expected_result, self.test_object('a', {'default' : ('v1', 2), 'nargs' : '*'}, {}, ''))
 
 	def test_default_dict(self):
@@ -86,7 +86,7 @@ class TestParamMetadata(unittest.TestCase):
 		Testing defaults: dict
 		'''
 		
-		expected_result = {'default' : [], 'action' : 'extend', 'nargs' : '+', 'help': '(Use the key=value format for each entry)'}
+		expected_result = {'default' : [], 'action' : 'extend' if simplifiedapp.ADD_ARGUMENT_ACTION_EXTEND else 'append', 'nargs' : '+', 'help': '(Use the key=value format for each entry)'}
 		self.assertDictEqual(expected_result, self.test_object('a', {'default' : {'v1' : 1, 2 : 'V2'}}, {}, ''))
 
 	def test_default_int(self):
