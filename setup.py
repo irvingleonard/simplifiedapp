@@ -24,13 +24,12 @@ setuptools.setup(
 		'Programming Language :: Python',
 		'Programming Language :: Python :: 3',
 		'Programming Language :: Python :: 3 :: Only',
-		'Programming Language :: Python :: 3.5',
 		'Topic :: Software Development :: Libraries',
 		'Topic :: Software Development :: Libraries :: Python Modules',
 	],
 	keywords = 'cli main setuptools',
-	python_requires = '>=3.5',
+	python_requires = '>=3.6',
 	packages = setuptools.find_packages(),
 	
-	**simplifiedapp.setuptools_get_metadata(simplifiedapp)
+	**simplifiedapp.object_metadata(simplifiedapp)
 )
