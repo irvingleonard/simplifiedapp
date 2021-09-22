@@ -19,7 +19,7 @@ import re
 import sys
 import types
 
-__version__ = '0.7.0-beta8'
+__version__ = '0.7.0'
 
 # EARLY_DEBUG = True
 
