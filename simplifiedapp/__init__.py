@@ -248,12 +248,16 @@ def callable_args(callable_, call_ = '', skip_builtin = None):
 	- Documentation
 	'''
 	
-	args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = inspect.getfullargspec(callable_)
+	try:
+		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = inspect.getfullargspec(callable_)
+	except TypeError:
+		LOGGER.debug('Signature inspect failed. Using generic signature for callable: %s', callable_)
+		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = [], 'args', 'kwargs', None, [], None, {}	#Generic signature: just args and kwargs, whatever you pass will be.
 	if (callable_.__name__ == '__init__') and hasattr(callable_, '__objclass__') and (callable_.__objclass__ == object):
 		varargs, varkw = None, None			#Builtin object.__init__ case, where *args and **kwargs are accepted but only through super()
 	LOGGER.debug('Callable "%s" yield signature: %s', callable_, dict(zip(('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations'),(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations))))
 
-	if (skip_builtin is not None) and (args[0] == skip_builtin):
+	if (skip_builtin is not None) and len(args) and (args[0] == skip_builtin):
 		args.pop(0)
 
 	if defaults is None:
