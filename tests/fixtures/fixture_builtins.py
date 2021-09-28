@@ -208,10 +208,28 @@ CLASS_ARGS_DICT = {
 		},
 		False			: {'__simplifiedapp_': (dict, (), 'args', (), 'kwargs')},
 		True			: ({'title': 'dict methods'}, {
+			'clear': (([], {}), {
+				None		: {
+					'description'	: 'D.clear() -> None.  Remove all items from D.',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('clear', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action' : 'extend', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
+				'args'		: {'action': 'extend', 'default': [], 'nargs': '*'}
+			}),
+			'copy': (([], {}), {
+				None	: {
+					'description'	: 'D.copy() -> a shallow copy of D',
+					'epilog'		: None
+				},
+				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('copy', (), 'args', (), 'kwargs'))},
+				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args': {'action': 'extend', 'default': [], 'nargs': '*'}
+			}),
 			'fromkeys': (([], {}), {
 				None		: {
-					'description': 'Create a new dictionary with keys from iterable and values set to value.',
-					'epilog': None
+					'description'	: 'Create a new dictionary with keys from iterable and values set to value.',
+					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('fromkeys', ('type', 'iterable', 'value'), None, (), None))},
 				'--value'	: {'default': argparse.SUPPRESS},
@@ -227,6 +245,33 @@ CLASS_ARGS_DICT = {
 				'--default'	: {'default': argparse.SUPPRESS},
 				'key'		: {}
 			}),
+			'items': (([], {}), {
+				None		: {
+					'description'	: 'D.items() -> a set-like object providing a view on D\'s items',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('items', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'extend', 'default': [], 'nargs': '*'}
+			}),
+			'keys': (([], {}), {
+				None		: {
+					'description'	: 'D.keys() -> a set-like object providing a view on D\'s keys',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('keys', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'extend', 'default': [], 'nargs': '*'}
+			}),
+			'pop': (([], {}), {
+				None		: {
+					'description'	: 'D.pop(k[,d]) -> v, remove specified key and return the corresponding value.',
+					'epilog'		: '\nf key is not found, default is returned if given, otherwise KeyError is raised'
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('pop', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'extend', 'default': [], 'nargs': '*'}}
+			),
 			'popitem'		: (([], {}), {
 				None	: {
 					'description'	: 'Remove and return a (key, value) pair as a 2-tuple.',
@@ -243,6 +288,24 @@ CLASS_ARGS_DICT = {
 				'--default'	: {'default': argparse.SUPPRESS},
 				'key'		: {}
 			}),
+			'update': (([], {}), {
+				None		: {
+					'description'	: 'D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.',
+					'epilog'		: 'If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]\nIf E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v\nIn either case, this is followed by: for k in F:  D[k] = F[k]'
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('update', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'extend', 'default': [], 'nargs': '*'}
+			}),
+			'values': (([], {}), {
+				None		: {
+					'description'	: 'D.values() -> an object providing a view on D\'s values',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('values', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'extend', 'default': [], 'nargs': '*'}
+			})
 		}),
 		'--kwargs'		: {'action' : 'extend', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
 		'args'			: {'action': 'extend', 'default': [], 'nargs': '*'},
