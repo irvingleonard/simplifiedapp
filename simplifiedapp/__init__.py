@@ -191,8 +191,11 @@ def object_metadata(obj):
 		metadata.update(re.match(DOCSTRING_FORMAT, obj.__doc__).groupdict())
 
 	if ('long_description' in metadata) and (metadata['long_description'] is not None) and len(metadata['long_description']):
-		indentation = len(re.match('\A(\s*)\S+.*', metadata['long_description']).groups()[0])
-		metadata['long_description'] = '\n'.join([line[indentation:] for line in metadata['long_description'].splitlines()])
+		try:
+			indentation = len(re.match('\A(\s*)\S+.*', metadata['long_description']).groups()[0])
+			metadata['long_description'] = '\n'.join([line[indentation:] for line in metadata['long_description'].splitlines()])
+		except Exception:
+			LOGGER.debug('Current (weak) docstring parsing failed in: %s', metadata['long_description'])
 	
 	# pprint.pprint(metadata)
 	return metadata
