@@ -305,9 +305,13 @@ def class_args(class_, allowed_privates = ('__call__',)):
 	for name, callable_ in inspect.getmembers(class_, inspect.isroutine):
 		if (name[0] == '_') and (name not in allowed_privates):
 			continue
-		args = callable_args(callable_, call_ = name, skip_builtin = 'self')
-		args[False]['__simplifiedapp_'] = (class_opts[False]['__simplifiedapp_'], args[False]['__simplifiedapp_'])
-		subparsers[name] = (([], {}), args)
+		try:
+			args = callable_args(callable_, call_ = name, skip_builtin = 'self')
+		except Exception:
+			LOGGER.exception("Member %s of class %s couldn't be processed", name, class_)
+		else:
+			args[False]['__simplifiedapp_'] = (class_opts[False]['__simplifiedapp_'], args[False]['__simplifiedapp_'])
+			subparsers[name] = (([], {}), args)
 
 	metadata = object_metadata(class_)
 	class_opts[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}
