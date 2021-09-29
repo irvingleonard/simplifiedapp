@@ -3,6 +3,9 @@
 Testing of argparse handling in simplifiedapp
 '''
 
+import argparse
+import pathlib
+import sys
 import unittest
 
 import simplifiedapp
@@ -15,7 +18,7 @@ class TestClassArgs(unittest.TestCase):
 	def setUp(self):
 		self.test_object = simplifiedapp.class_args
 		self.maxDiff = None
-
+		sys.path.append(str(pathlib.Path( __file__ ).parent / 'fixtures'))
 
 	def test_empty_class(self):
 		'''
@@ -145,6 +148,15 @@ class TestClassArgs(unittest.TestCase):
 				}),
 		}
 		self.assertDictEqual(expected_result, self.test_object(FixtureKeywordsMethod))
+
+	def test_builtin_class(self):
+		'''
+		Test a builtin class (dict)
+		'''
+
+		import fixture_builtins
+
+		self.assertDictEqual(fixture_builtins.class_args_dict(), self.test_object(dict))
 
 	def test_version(self):
 		'''

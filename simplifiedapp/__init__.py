@@ -19,7 +19,7 @@ import re
 import sys
 import types
 
-__version__ = '0.7.0'
+__version__ = '0.7.1'
 
 # EARLY_DEBUG = True
 
@@ -191,8 +191,11 @@ def object_metadata(obj):
 		metadata.update(re.match(DOCSTRING_FORMAT, obj.__doc__).groupdict())
 
 	if ('long_description' in metadata) and (metadata['long_description'] is not None) and len(metadata['long_description']):
-		indentation = len(re.match('\A(\s*)\S+.*', metadata['long_description']).groups()[0])
-		metadata['long_description'] = '\n'.join([line[indentation:] for line in metadata['long_description'].splitlines()])
+		try:
+			indentation = len(re.match('\A(\s*)\S+.*', metadata['long_description']).groups()[0])
+			metadata['long_description'] = '\n'.join([line[indentation:] for line in metadata['long_description'].splitlines()])
+		except Exception:
+			LOGGER.debug('Current (weak) docstring parsing failed in: %s', metadata['long_description'])
 	
 	# pprint.pprint(metadata)
 	return metadata
@@ -248,12 +251,16 @@ def callable_args(callable_, call_ = '', skip_builtin = None):
 	- Documentation
 	'''
 	
-	args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = inspect.getfullargspec(callable_)
+	try:
+		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = inspect.getfullargspec(callable_)
+	except TypeError:
+		LOGGER.debug('Signature inspect failed. Using generic signature for callable: %s', callable_)
+		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = [], 'args', 'kwargs', None, [], None, {}	#Generic signature: just args and kwargs, whatever you pass will be.
 	if (callable_.__name__ == '__init__') and hasattr(callable_, '__objclass__') and (callable_.__objclass__ == object):
 		varargs, varkw = None, None			#Builtin object.__init__ case, where *args and **kwargs are accepted but only through super()
 	LOGGER.debug('Callable "%s" yield signature: %s', callable_, dict(zip(('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations'),(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations))))
 
-	if (skip_builtin is not None) and (args[0] == skip_builtin):
+	if (skip_builtin is not None) and len(args) and (args[0] == skip_builtin):
 		args.pop(0)
 
 	if defaults is None:
@@ -305,9 +312,13 @@ def class_args(class_, allowed_privates = ('__call__',)):
 	for name, callable_ in inspect.getmembers(class_, inspect.isroutine):
 		if (name[0] == '_') and (name not in allowed_privates):
 			continue
-		args = callable_args(callable_, call_ = name, skip_builtin = 'self')
-		args[False]['__simplifiedapp_'] = (class_opts[False]['__simplifiedapp_'], args[False]['__simplifiedapp_'])
-		subparsers[name] = (([], {}), args)
+		try:
+			args = callable_args(callable_, call_ = name, skip_builtin = 'self')
+		except Exception:
+			LOGGER.exception("Member %s of class %s couldn't be processed", name, class_)
+		else:
+			args[False]['__simplifiedapp_'] = (class_opts[False]['__simplifiedapp_'], args[False]['__simplifiedapp_'])
+			subparsers[name] = (([], {}), args)
 
 	metadata = object_metadata(class_)
 	class_opts[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}

@@ -93,106 +93,11 @@ class TestModuleArgs(unittest.TestCase):
 		'''
 		Test with builtin module (venv)
 		'''
-		
+
+		import fixture_builtins
 		import venv
 
-		builtin_module_fixture = {
-			(3, 6)	: {
-				None	: {
-					'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-					'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
-					},
-				True: ({'title': 'venv callables'}, {
-					'create': (([], {}), {
-						None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
-						False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt'), None, (), None)},
-						'--clear'					: {'action' : 'store_true', 'default' : False},
-						'--prompt'					: {'default' : argparse.SUPPRESS},
-						'--symlinks'				: {'action' : 'store_true', 'default' : False},
-						'--system_site_packages'	: {'action' : 'store_true', 'default' : False},
-						'--with_pip'				: {'action' : 'store_true', 'default' : False},
-						'env_dir'					: {}
-					}),
-					'main': (([], {}), {
-						None		: {},
-						False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
-						'--args'	: {'default': argparse.SUPPRESS}
-					})
-				})
-			},
-			(3, 7)	: {
-				None	: {
-					'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-					'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
-					},
-				True: ({'title': 'venv callables'}, {
-					'create': (([], {}), {
-						None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
-						False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt'), None, (), None)},
-						'--clear'					: {'action' : 'store_true', 'default' : False},
-						'--prompt'					: {'default' : argparse.SUPPRESS},
-						'--symlinks'				: {'action' : 'store_true', 'default' : False},
-						'--system_site_packages'	: {'action' : 'store_true', 'default' : False},
-						'--with_pip'				: {'action' : 'store_true', 'default' : False},
-						'env_dir'					: {}
-					}),
-					'main': (([], {}), {
-						None		: {},
-						False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
-						'--args'	: {'default': argparse.SUPPRESS}
-					})
-				})
-			},
-			(3, 8)	: {
-				None	: {
-					'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-					'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
-					},
-				True: ({'title': 'venv callables'}, {
-					'create': (([], {}), {
-						None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
-						False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt'), None, (), None)},
-						'--clear'					: {'action' : 'store_true', 'default' : False},
-						'--prompt'					: {'default' : argparse.SUPPRESS},
-						'--symlinks'				: {'action' : 'store_true', 'default' : False},
-						'--system_site_packages'	: {'action' : 'store_true', 'default' : False},
-						'--with_pip'				: {'action' : 'store_true', 'default' : False},
-						'env_dir'					: {}
-					}),
-					'main': (([], {}), {
-						None		: {},
-						False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
-						'--args'	: {'default': argparse.SUPPRESS}
-					})
-				})
-			},
-			(3, 9)	: {
-				None	: {
-					'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-					'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
-					},
-				True: ({'title': 'venv callables'}, {
-					'create': (([], {}), {
-						None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
-						False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
-						'--clear'					: {'action' : 'store_true', 'default' : False},
-						'--prompt'					: {'default' : argparse.SUPPRESS},
-						'--symlinks'				: {'action' : 'store_true', 'default' : False},
-						'--system_site_packages'	: {'action' : 'store_true', 'default' : False},
-						'--upgrade_deps'			: {'action' : 'store_true', 'default' : False},
-						'--with_pip'				: {'action' : 'store_true', 'default' : False},
-						'env_dir'					: {}
-					}),
-					'main': (([], {}), {
-						None		: {},
-						False		: {'__simplifiedapp_' : (getattr(venv, 'main'), ('args',), None, (), None)},
-						'--args'	: {'default': argparse.SUPPRESS}
-					})
-				})
-			},
-		}
-
-		self.assertDictEqual(builtin_module_fixture[tuple(sys.version_info)[:2]], self.test_object(venv))
+		self.assertDictEqual(fixture_builtins.module_args_venv(), self.test_object(venv))
 
 	def test_version(self):
 		'''
