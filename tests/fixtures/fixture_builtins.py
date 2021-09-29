@@ -157,6 +157,16 @@ MODULE_ARGS_VENV = {
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('setup_scripts', ('context',), None, (), None))},
 						'context'	: {}
 					}),
+					'symlink_or_copy': (([], {}), {
+						None						: {
+							'description'	: '\n            Try symlinking a file, and if that fails, fall back to copying.',
+							'epilog'		: '            '
+						},
+						False						: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('symlink_or_copy', ('src', 'dst', 'relative_symlinks_ok'), None, (), None))},
+						'--relative_symlinks_ok'	: {'action': 'store_true', 'default': False},
+						'dst'						: {},
+						'src'						: {}
+					}),
 					'upgrade_dependencies': (([], {}), {
 						None: {},
 						False: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('upgrade_dependencies', ('context',), None, (), None))},
