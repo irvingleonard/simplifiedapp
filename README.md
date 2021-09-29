@@ -151,10 +151,3 @@ setuptools.setup(
 ```
 
 The name, version, description and long_description parameters are derived from mymodule. If those doesn't work odds are that there might be something non-compliant (with the metadata suggestions) in your module.
-
-## Test suite
-
-The tests use the builtin `unittest` module and can be run like `python -m unittest discover -s tests -v`
-
-Using [Docker](https://www.docker.com/) this suite can be run in different environments:
-`docker run -it --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp python:3.X-slim python -m unittest discover -s tests`
