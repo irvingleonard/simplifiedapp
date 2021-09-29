@@ -394,6 +394,126 @@ MODULE_ARGS_VENV = {
 }
 
 CLASS_ARGS_DICT = {
+	(3, 7)	: {
+		None			: {
+			'description'	: 'dict() -> new empty dictionary',
+			'epilog'		: '\n'.join([
+				"dict(mapping) -> new dictionary initialized from a mapping object\'s",
+				'    (key, value) pairs',
+				'dict(iterable) -> new dictionary initialized as if via:',
+				'    d = {}',
+				'    for k, v in iterable:',
+				'        d[k] = v',
+				'dict(**kwargs) -> new dictionary initialized with the name=value pairs',
+				'    in the keyword argument list.  For example:  dict(one=1, two=2)',
+			]),
+		},
+		False			: {'__simplifiedapp_': (dict, (), 'args', (), 'kwargs')},
+		True			: ({'title': 'dict methods'}, {
+			'clear': (([], {}), {
+				None		: {
+					'description'	: 'D.clear() -> None.  Remove all items from D.',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('clear', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action' : 'append', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
+				'args'		: {'action': 'append', 'default': [], 'nargs': '*'}
+			}),
+			'copy': (([], {}), {
+				None	: {
+					'description'	: 'D.copy() -> a shallow copy of D',
+					'epilog'		: None
+				},
+				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('copy', (), 'args', (), 'kwargs'))},
+				'--kwargs': {'action': 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args': {'action': 'append', 'default': [], 'nargs': '*'}
+			}),
+			'fromkeys': (([], {}), {
+				None		: {
+					'description'	: 'Create a new dictionary with keys from iterable and values set to value.',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('fromkeys', ('type', 'iterable', 'value'), None, (), None))},
+				'iterable'	: {},
+				'type'		: {},
+				'value'		: {},
+			}),
+			'get'			: (([], {}), {
+				None		: {
+					'description'	: 'Return the value for key if key is in the dictionary, else default.',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('get', ('key', 'default'), None, (), None))},
+				'default'	: {},
+				'key'		: {}
+			}),
+			'items': (([], {}), {
+				None		: {
+					'description'	: 'D.items() -> a set-like object providing a view on D\'s items',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('items', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'append', 'default': [], 'nargs': '*'}
+			}),
+			'keys': (([], {}), {
+				None		: {
+					'description'	: 'D.keys() -> a set-like object providing a view on D\'s keys',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('keys', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'append', 'default': [], 'nargs': '*'}
+			}),
+			'pop': (([], {}), {
+				None		: {
+					'description'	: 'D.pop(k[,d]) -> v, remove specified key and return the corresponding value.',
+					'epilog'		: 'If key is not found, d is returned if given, otherwise KeyError is raised'
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('pop', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'append', 'default': [], 'nargs': '*'}}
+			),
+			'popitem'		: (([], {}), {
+				None		: {
+					'description'	: 'D.popitem() -> (k, v), remove and return some (key, value) pair as a',
+					'epilog'		: '2-tuple; but raise KeyError if D is empty.'
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('popitem', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'append', 'default': [], 'nargs': '*'},
+			}),
+			'setdefault'	: (([], {}), {
+				None		: {
+					'description'	: 'Insert key with a value of default if key is not in the dictionary.',
+					'epilog'		: '\neturn the value for key if key is in the dictionary, else default.'
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('setdefault', ('key', 'default'), None, (), None))},
+				'default'	: {},
+				'key'		: {}
+			}),
+			'update': (([], {}), {
+				None		: {
+					'description'	: 'D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.',
+					'epilog'		: 'If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]\nIf E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v\nIn either case, this is followed by: for k in F:  D[k] = F[k]'
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('update', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'append', 'default': [], 'nargs': '*'}
+			}),
+			'values': (([], {}), {
+				None		: {
+					'description'	: 'D.values() -> an object providing a view on D\'s values',
+					'epilog'		: None
+				},
+				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('values', (), 'args', (), 'kwargs'))},
+				'--kwargs'	: {'action': 'append', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args'		: {'action': 'append', 'default': [], 'nargs': '*'}
+			})
+		}),
+		'--kwargs'		: {'action' : 'append', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
+		'args'			: {'action': 'append', 'default': [], 'nargs': '*'},
+	},
 	(3, 8)	: {
 		None			: {
 			'description'	: 'dict() -> new empty dictionary',
