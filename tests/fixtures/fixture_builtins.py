@@ -1108,6 +1108,17 @@ CLASS_ARGS_DICT = {
 		},
 		False			: {'__simplifiedapp_': (dict, (), 'args', (), 'kwargs')},
 		True			: ({'title': 'dict methods'}, {
+			
+			
+			'__new__': (([], {}), {
+				None: {
+					'description': 'Create and return a new object.  See help(type) for accurate signature.',
+					'epilog': None
+				},
+				False: {'__simplifiedapp_': (dict.__new__, (), 'args', (), 'kwargs')},
+				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
+				'args': {'action': 'extend', 'default': [], 'nargs': '*'}
+			}),
 			'clear': (([], {}), {
 				None		: {
 					'description'	: 'D.clear() -> None.  Remove all items from D.',
@@ -1131,10 +1142,9 @@ CLASS_ARGS_DICT = {
 					'description'	: 'Create a new dictionary with keys from iterable and values set to value.',
 					'epilog'		: None
 				},
-				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('fromkeys', ('type', 'iterable', 'value'), None, (), None))},
+				False		: {'__simplifiedapp_': ((dict.fromkeys, ('iterable', 'value'), None, (), None))},
 				'--value'	: {'default': argparse.SUPPRESS},
 				'iterable'	: {},
-				'type'		: {},
 			}),
 			'get'			: (([], {}), {
 				None		: {
