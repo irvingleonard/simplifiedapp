@@ -19,7 +19,7 @@ import re
 import sys
 import types
 
-__version__ = '0.7.1'
+__version__ = '0.7.2'
 
 # EARLY_DEBUG = True
 
@@ -243,7 +243,7 @@ def param_metadata(arg_name, arg_values, annotations, docstring):
 	return arg_values
 
 
-def callable_args(callable_, call_ = '', skip_builtin = None):
+def callable_args(callable_, from_class = False):
 	'''Extract argparse info from callable
 	Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 	
@@ -256,16 +256,24 @@ def callable_args(callable_, call_ = '', skip_builtin = None):
 	except TypeError:
 		LOGGER.debug('Signature inspect failed. Using generic signature for callable: %s', callable_)
 		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = [], 'args', 'kwargs', None, [], None, {}	#Generic signature: just args and kwargs, whatever you pass will be.
-	if (callable_.__name__ == '__init__') and hasattr(callable_, '__objclass__') and (callable_.__objclass__ == object):
+		if from_class:
+			args = ['self']	# Default will be bound method
+	if from_class and (callable_ is object.__init__):
 		varargs, varkw = None, None			#Builtin object.__init__ case, where *args and **kwargs are accepted but only through super()
 	LOGGER.debug('Callable "%s" yield signature: %s', callable_, dict(zip(('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations'),(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations))))
 
-	if (skip_builtin is not None) and len(args) and (args[0] == skip_builtin):
-		args.pop(0)
+	if from_class:
+		is_boundmethod = False
+		if len(args):
+			if args[0] == 'self':
+				is_boundmethod = True
+				args.pop(0)
+			elif args[0] in ['cls', 'type']:
+				args.pop(0)
 
 	if defaults is None:
 		defaults = []
-	req_args = {arg : {} for arg in args[:len(args) - len(defaults)] if arg not in ([] if skip_builtin is None else (skip_builtin,))}
+	req_args = {arg : {} for arg in args[:len(args) - len(defaults)]}
 	# print('Got req_args {} from args {} and defaults {}'.format(req_args, args, defaults))
 	opt_args = {arg : {'default' : arg_default} for arg, arg_default in dict(zip(args[-len(defaults):], defaults)).items()}
 
@@ -283,10 +291,10 @@ def callable_args(callable_, call_ = '', skip_builtin = None):
 	arguments = {arg : param_metadata(arg, arg_values, annotations, docstring = '') for arg, arg_values in req_args.items()}
 	arguments.update({('-{}' if len(arg) == 1 else '--{}').format(arg) : param_metadata(arg, arg_values, annotations, docstring = '') for arg, arg_values in opt_args.items()})
 
-	if call_ is not None:
-		if not call_:
-			call_ = callable_
-		arguments[False] = {'__simplifiedapp_' : (call_, tuple(args), varargs, tuple(kwonlyargs), varkw)}
+	arguments[False] = {'__simplifiedapp_' : (callable_, tuple(args), varargs, tuple(kwonlyargs), varkw)}
+	if from_class:
+		if is_boundmethod:
+			arguments[False] = {'__simplifiedapp_' : (metadata['name'], tuple(args), varargs, tuple(kwonlyargs), varkw)}
 
 	arguments[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}
 	if 'version' in metadata:
@@ -296,7 +304,7 @@ def callable_args(callable_, call_ = '', skip_builtin = None):
 	return arguments
 
 
-def class_args(class_, allowed_privates = ('__call__',)):
+def class_args(class_, allowed_privates = ()):
 	'''Extract argparse info from class
 	Uses introspection to build a dict out of a class, usable to build an argparse tree.
 	
@@ -305,19 +313,27 @@ def class_args(class_, allowed_privates = ('__call__',)):
 	- Add support for immutable objects (add the __new__ method into the process) 
 	- Documentation
 	'''
-
-	class_opts = callable_args(getattr(class_, '__init__'), call_ = class_, skip_builtin = 'self')
+	
+	allowed_privates = ['__new__', '__call__'] + list(allowed_privates)
+	
+	class_opts = callable_args(getattr(class_, '__init__'), from_class = True)
+	class_opts[False]['__simplifiedapp_'] = (class_, *class_opts[False]['__simplifiedapp_'][1:])
 
 	subparsers = {}
 	for name, callable_ in inspect.getmembers(class_, inspect.isroutine):
 		if (name[0] == '_') and (name not in allowed_privates):
+			LOGGER.debug('Skipping private method "%s" in class %s', name, class_)
+			continue
+		elif callable_ is object.__new__:
+			LOGGER.debug("Skipping object's __new__ in class %s", class_)
 			continue
 		try:
-			args = callable_args(callable_, call_ = name, skip_builtin = 'self')
+			args = callable_args(callable_, from_class = True)
 		except Exception:
 			LOGGER.exception("Member %s of class %s couldn't be processed", name, class_)
 		else:
-			args[False]['__simplifiedapp_'] = (class_opts[False]['__simplifiedapp_'], args[False]['__simplifiedapp_'])
+			if isinstance(args[False]['__simplifiedapp_'][0], str):
+				args[False]['__simplifiedapp_'] = (class_opts[False]['__simplifiedapp_'], args[False]['__simplifiedapp_'])
 			subparsers[name] = (([], {}), args)
 
 	metadata = object_metadata(class_)

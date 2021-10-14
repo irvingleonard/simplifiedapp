@@ -2,7 +2,7 @@
 
 A simple way to run your python code from the CLI.
 
-The module uses introspection to try and expose your code to the command line. It won't work in all cases, depends on the complexity of your code.
+The module uses introspection to try and expose your code to the command line. It won't work in all cases, it depends on the complexity of your code.
 
 ### Functions
 
@@ -14,16 +14,18 @@ The simplest situation is a function (callable). A function might require some p
 - json
 
 ```
-def main(self, i_need_this, *args, a_boolean_switch = False, **kwargs): #Your function MUST accept **kwargs (and it's a good idea to accept *args too)
+def main(self, i_need_this, *args, a_boolean_switch = False, **kwargs):
 	pass #do stuff
 
 if __name__ == '__main__':
-	simplifiedapp.main(main)	# simplifiedapp.main('main'), as a string, will also work (for your dynamic calling needs)
+	simplifiedapp.main(main)
 ```
 
 ### Classes
 
-The target can also be a class. Subparsers are created for every available and not special method in the class. If the class has a `__call__` method then it can be "run", otherwise you'll get an error. While running class subparsers, you must provide the parameters required by `__init__` and by `__call__` (and you could also provide optional parameters to both).
+The target can also be a class. Subparsers are created for every available and not special method in the class. The class can be "run", meaning it will be instantiated and the object returned. While running class subparsers, you must provide the parameters required by `__init__` and the actual method, if any is needed, and you could also provide optional parameters to both.
+
+The algorithm to detect [class methods](https://docs.python.org/3.10/library/functions.html#classmethod) is rather weak: if your first parameter is called `cls` or `type` (used in the standard library) then it will be treated as a class method; it's not great, it will yield some false possitives and negatives, but is the best we got for the time being. In the same note, "regular methods" are expected to have `self` as the first parameter. Every method that doesn't have any of those names in the first parameter will be treated as a [static method](https://docs.python.org/3.10/library/functions.html#staticmethod).
 
 ```
 class MyExampleClass:
@@ -31,21 +33,21 @@ class MyExampleClass:
 	This is the main subject of the module
 	'''
 	
-	def spring(self, foo, *args, bar = 'initial_value', **kwargs): #TYour function MUST accept **kwargs (and it's a good idea to accept *args too)
+	def spring(self, foo, bar = 'initial_value'):
 		'''The spring function
 		Some springing needs to be done
 		'''
 		
 		pass #Do stuff...
 		
-	def skip(self, *args, baz = False, **kwargs):
+	def skip(self, baz = False):
 		pass
 		
-	def leap(self, *args, qux = (), **kwargs):
+	def leap(self, qux = ()):
 		pass
 
 f __name__ == '__main__':
-	simplifiedapp.main(MyExampleClass)	# simplifiedapp.main('MyExampleClass'), as a string, will also work (for your dynamic calling needs)
+	simplifiedapp.main(MyExampleClass)
 ```
 
 ### Modules
@@ -70,7 +72,7 @@ try:
 except ModuleNotFoundError:
 	import __init__ as mymodule
 
-simplifiedapp.main(mymodule)	# simplifiedapp.main('mymodule'), as a string, will also work (for your dynamic calling needs)
+simplifiedapp.main(mymodule)
 ```
 
 ## Docstrings
@@ -143,15 +145,11 @@ setuptools.setup(
 		'Even :: More :: Weird Looking although Intelligible :: Strings',
 	],
 	keywords = 'some keywords',
-	python_requires = '>=3.7',
+	python_requires = '>=3.6',
 	packages = setuptools.find_packages(),
 	
 	**simplifiedapp.object_metadata(mymodule)
 )
 ```
 
-The name, version, description and long_description parameters are derived from mymodule. If those doesn't work odds are that there might be something non-compliant (with the metadata suggestions) in your module.
-
-## Test suite
-
-The tests use the builtin `unittest` module and can be run like `python -m unittest discover -s tests -v`
+The name, version, description and long_description parameters are derived from `mymodule`. If those doesn't work odds are that there might be something non-compliant (with the metadata suggestions) in your module.
