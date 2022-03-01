@@ -1,9 +1,8 @@
 #! python
-'''Boilerplate stuff done for you.
-This module has some generic classes and functions for several purposes.
+'''A simple way to run your python code from the CLI
+The module uses introspection to try and expose your code to the command line. It won't work in all cases, it depends on the complexity of your code.
 
-ToDo:
-- Everything
+This is the executable part.
 '''
 
 import logging

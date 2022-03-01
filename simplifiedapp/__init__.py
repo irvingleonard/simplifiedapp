@@ -1,6 +1,6 @@
 #! python
-'''Boilerplate stuff done for you.
-This module has some generic classes and functions for several purposes.
+'''A simple way to run your python code from the CLI
+The module uses introspection to try and expose your code to the command line. It won't work in all cases, it depends on the complexity of your code.
 
 ToDo:
 - Everything
@@ -19,7 +19,7 @@ import re
 import sys
 import types
 
-__version__ = '0.7.1'
+__version__ = '0.8.0dev0'
 
 # EARLY_DEBUG = True
 
@@ -45,6 +45,9 @@ else:
 ######################## I/O Classes ########################
 
 class BaseValues:
+	'''Dict with merge support
+	Python 3.9 introduced the bar operator to merge dictionaries. This is the base of the configuration loading (merging dictionaries from different sources)
+	'''
 	
 	def __init__(self, content):
 		'''Init magic
@@ -174,7 +177,6 @@ BUILTIN_ARGPARSE_OPTIONS = {
 	'--json'			: {'action' : 'store_true', 'default' : False, 'help' : 'output a JSON object as a string'},
 }
 
-
 def object_metadata(obj):
 	'''Gets metadata from an object
 	It tries to get some meta information from the provided object
@@ -199,7 +201,6 @@ def object_metadata(obj):
 	
 	# pprint.pprint(metadata)
 	return metadata
-
 
 def param_metadata(arg_name, arg_values, annotations, docstring):
 	'''Extends argument's values
@@ -242,12 +243,12 @@ def param_metadata(arg_name, arg_values, annotations, docstring):
 
 	return arg_values
 
-
 def callable_args(callable_, call_ = '', skip_builtin = None):
 	'''Extract argparse info from callable
 	Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 	
 	ToDo:
+	- Detect and prepare for object.__new__ (like the object.__init__ special case)
 	- Documentation
 	'''
 	
@@ -295,14 +296,13 @@ def callable_args(callable_, call_ = '', skip_builtin = None):
 	LOGGER.debug('Generated arguments: %s', arguments)
 	return arguments
 
-
 def class_args(class_, allowed_privates = ('__call__',)):
 	'''Extract argparse info from class
 	Uses introspection to build a dict out of a class, usable to build an argparse tree.
 	
 	ToDo:
-	- Diferentiate the instantiation from the call. Allow __call__ to be a subparser an let the "class parameters" be about __init__
-	- Add support for immutable objects (add the __new__ method into the process) 
+	- Add support for immutable objects (add the __new__ method into the process)
+	- Add support for class_methods and static_methods
 	- Documentation
 	'''
 
@@ -329,7 +329,6 @@ def class_args(class_, allowed_privates = ('__call__',)):
 
 	LOGGER.debug('Generated class options: %s', class_opts)
 	return class_opts
-
 
 def module_args(module, allowed_privates = ('__call__',)):
 	'''Extract argparse info from module
@@ -369,7 +368,6 @@ def module_args(module, allowed_privates = ('__call__',)):
 		mod_opts[True] = ({'title' : metadata['name'] + ' callables'}, subparsers)
 
 	return mod_opts
-
 
 def build_parser(parser_content, argument_parser = None):
 	'''Argparse parser building
@@ -422,12 +420,13 @@ def build_parser(parser_content, argument_parser = None):
 	
 	return argument_parser
 
-
 def run_call(call_, complete_input, parent = None):
 	'''Execute a callable
 	Unpacks the call_ tuple, runs some checks and get some defaults if there's missing info. Returns the result of such run.
 	
-	ToDo: Documentation
+	ToDo:
+	- Add support for asyncio (async/await methods)
+	- Documentation
 	'''
 
 	if len(call_) != 5:
@@ -458,7 +457,6 @@ def run_call(call_, complete_input, parent = None):
 
 	return callable_(*positional_values, **keyword_values)
 
-
 def main(target = None, sys_argv = None):
 	'''Simplified run of an app.
 	Performs a simplified procedure of an app run. It will build and argparse object out of a module, class, or callable referenced via "target" and run it.
@@ -480,9 +478,10 @@ def main(target = None, sys_argv = None):
 	- any other type of object, and the json flag was passed as True, then it will be printed as a json string (json.dumps)
 	
 	ToDo:
-	- Documentation
+	- Implement a multipass algorithm, early loading the input_files
 	- Generalize "output" via output_file (instead of the lonely json)
 	- Add support to log_file (send logs to file)
+	- Documentation
 	'''
 
 	try:
@@ -575,6 +574,9 @@ def main(target = None, sys_argv = None):
 		else:
 			LOGGER.debug('The result is an object. Printing it with pprint.')
 			pprint.pprint(result, width = PPRINT_WIDTH)
+
+
+######################## Legacy functions ########################
 
 
 def files_in_module_dir(module, dir_name, exclude = OS_FILES):
