@@ -10,19 +10,22 @@ import unittest
 
 import simplifiedapp
 
-class TestClassArgs(unittest.TestCase):
+ARGUMENT_CLASS = simplifiedapp.ArgparseArgument
+PARSER_CLASS = simplifiedapp.ArgparseParser
+
+class TestArgparseParserFromClass(unittest.TestCase):
 	'''
-	Tests for the class_args function using simplifiedapp content
+	Tests for the ArgparseParser.from_class class method
 	'''
 	
 	def setUp(self):
-		self.test_object = simplifiedapp.class_args
+		self.test_object = simplifiedapp.ArgparseParser.from_class
 		self.maxDiff = None
 		sys.path.append(str(pathlib.Path( __file__ ).parent / 'fixtures'))
 
 	def test_empty_class(self):
 		'''
-		Test class_args with an empty class
+		Test ArgparseParser.from_class with an empty class
 		'''
 		
 		class FixtureEmpty:
@@ -35,7 +38,8 @@ class TestClassArgs(unittest.TestCase):
 			},
 
 		}
-		self.assertDictEqual(expected_result, self.test_object(FixtureEmpty))
+		expected_result = PARSER_CLASS(defaults = {'__simplifiedapp_' : (FixtureEmpty, (), None, (), None)})
+		self.assertEqual(self.test_object(FixtureEmpty), expected_result)
 
 	def test_empty_init(self):
 		'''
