@@ -28,6 +28,9 @@ setuptools.setup(
 		'Topic :: Software Development :: Libraries :: Python Modules',
 	],
 	keywords = 'cli main setuptools',
+	install_requires = [
+		'docstring_parser',
+	],
 	python_requires = '>=3.7',
 	packages = setuptools.find_packages(),
 	

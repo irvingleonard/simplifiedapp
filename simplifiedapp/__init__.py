@@ -16,9 +16,10 @@ import logging.handlers
 import os
 import pathlib
 import pprint
-import re
 import sys
 import types
+
+from docstring_parser import parse as docstring_parse
 
 __version__ = '0.8.0dev0'
 
@@ -28,16 +29,19 @@ DEFAULT_LOG_PARAMETERS = {
 	'format'	: '%(asctime)s|%(name)s|%(levelname)s:%(message)s',
 	'datefmt'	: '%H:%M:%S',
 }
-DOCSTRING_FORMAT = re.compile('(?P<description>\A.+?$)(?:\n(?P<long_description>.+?)(?:^\s*\n.*)?)?\Z', re.IGNORECASE | re.MULTILINE | re.DOTALL)
 PPRINT_WIDTH = 270
 OS_FILES = ('.DS_Store')
 
 def object_metadata(obj):
 	'''Gets metadata from an object
-	It tries to get some meta information from the provided object
+	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring
 
-	ToDo: Documentation
+	:param obj: The object build the metadata for
+	:returns dict: dictionary containing metadata details
 	'''
+
+	DOCSTRING_PARAM_ATTRS = ('default', 'description', 'is_optional', 'type_name')
+	DOCSTRING_RETURN_ATTRS = ('description', 'is_generator', 'return_name', 'type_name')
 
 	metadata = {'name' : obj.__name__}
 
@@ -45,14 +49,28 @@ def object_metadata(obj):
 		metadata['version'] = obj.__version__
 
 	if hasattr(obj, '__doc__') and (obj.__doc__ is not None) and len(obj.__doc__):
-		metadata.update(re.match(DOCSTRING_FORMAT, obj.__doc__).groupdict())
-
-	if ('long_description' in metadata) and (metadata['long_description'] is not None) and len(metadata['long_description']):
-		try:
-			indentation = len(re.match('\A(\s*)\S+.*', metadata['long_description']).groups()[0])
-			metadata['long_description'] = '\n'.join([line[indentation:] for line in metadata['long_description'].splitlines()])
-		except Exception:
-			LOGGER.debug('Current (weak) docstring parsing failed in: %s', metadata['long_description'])
+		docstring = (docstring_parse(obj.__doc__))
+		if docstring.short_description:
+			metadata['description'] = docstring.short_description
+		if docstring.long_description:
+			metadata['long_description'] = docstring.long_description
+		if len(docstring.params):
+			docstring_params = {}
+			for param in docstring.params:
+				docstring_param = {}
+				for param_attr in DOCSTRING_PARAM_ATTRS:
+					docstring_param_attr = getattr(param, param_attr)
+					if docstring_param_attr is not None:
+						docstring_param[param_attr] = docstring_param_attr
+				docstring_params[param.arg_name] = docstring_param
+			metadata['parameters'] = docstring_params
+		if docstring.returns:
+			docstring_return = {}
+			for return_attr in DOCSTRING_RETURN_ATTRS:
+				docstring_return_attr = getattr(docstring.returns, return_attr)
+				if docstring_return_attr is not None:
+					docstring_return[return_attr] = docstring_return_attr
+			metadata['returns'] = docstring_return
 
 	return metadata
 
