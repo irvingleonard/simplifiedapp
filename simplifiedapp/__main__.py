@@ -15,10 +15,12 @@ try:
 except ModuleNotFoundError:
 	import __init__ as simplifiedapp
 
-def simplifiedapp_main(target):
-	pass
+target, sys_argv = simplifiedapp, []
+if len(sys.argv) > 1:
+	if ((len(sys.argv[1]) == 2) and sys.argv[1].startswith('-')) or sys.argv[1].startswith('--'):
+		sys_argv = sys.argv[1:]
+	elif len(sys.argv) > 2:
+		target = sys.argv[1]
+		sys_argv = sys.argv[2:]
 
-if (len(sys.argv) > 1):
-	simplifiedapp.main(target = sys.argv[1], sys_argv = sys.argv[2:])
-else:
-	simplifiedapp.main(target = simplifiedapp_main)
+simplifiedapp.main(target = target, sys_argv = sys_argv)

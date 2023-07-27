@@ -28,7 +28,7 @@ setuptools.setup(
 		'Topic :: Software Development :: Libraries :: Python Modules',
 	],
 	keywords = 'cli main setuptools',
-	python_requires = '>=3.6',
+	python_requires = '>=3.7',
 	packages = setuptools.find_packages(),
 	
 	**simplifiedapp.object_metadata(simplifiedapp)
