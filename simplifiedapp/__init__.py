@@ -34,7 +34,7 @@ OS_FILES = ('.DS_Store')
 
 def object_metadata(obj):
 	'''Gets metadata from an object
-	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring
+	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring.
 
 	:param obj: The object build the metadata for
 	:returns dict: dictionary containing metadata details
