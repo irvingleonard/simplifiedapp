@@ -56,6 +56,54 @@ def object_metadata(obj):
 
 	return metadata
 
+def parameters_from_callable(callable_, callable_metadata = None, from_class = False):
+	'''Callable parameters details
+	Uses introspection to extract the parameters required/allowed by callable and as much details as possible from them.
+	
+	ToDo:
+	- Documentation
+	'''
+	
+	try:
+		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = getfullargspec(callable_)
+	except TypeError:
+		LOGGER.debug('Signature inspect failed. Using generic signature for callable: %s', callable_)
+		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = [], 'args', 'kwargs', None, [], None, {}	#Generic signature: just args and kwargs, whatever you pass will be.
+		if from_class:
+			args = ['self']	# Default will be bound method
+	
+	if from_class and (callable_ is object.__init__):
+		#Builtin object.__init__ case, where *args and **kwargs are accepted but only through super()
+		varargs, varkw = None, None
+	
+	LOGGER.debug('Callable "%s" yield signature: %s' % (callable_, dict(zip(('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations'),(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations)))))
+	
+	if defaults is None:
+		defaults = []
+	if kwonlydefaults is None:
+		kwonlydefaults = {}
+	
+	parameters = {arg : {} for arg in args[:len(args)-len(defaults)]}
+	for i in range(len(defaults)):
+		parameters[args[-len(defaults)+i]] = {'default' : defaults[i]}
+	if varargs is not None:
+		parameters[varargs] = {'default' : (), 'type' : tuple}
+	parameters.update({kwarg : {'default' : kwonlydefaults[kwarg]} if kwarg in kwonlydefaults else {} for kwarg in kwonlyargs})
+	if varkw is not None:
+		parameters[varkw] = {'default' : {}, 'type' : dict}
+	
+	for param, annotation in annotations.items():
+		parameters[param]['annotation'] = annotation
+		
+	if (callable_metadata is not None) and ('parameters' in callable_metadata):
+		for param, docstring in callable_metadata['parameters'].items():
+			if param not in parameters:
+				LOGGER.warning('Docstring references a missing parameter: %s', param)
+			else:
+				parameters[param]['docstring'] = docstring
+			
+	return parameters
+
 def param_metadata(arg_name, arg_values, annotations, docstring):
 	'''Extends argument's values
 	Uses the defaults, annotations and docstring to extend the argument values (type, action, etc.)
