@@ -1,13 +1,13 @@
 #python
 '''
-Testing the introspection.object_metadata function
+Testing the _introspection.object_metadata function
 '''
 
 from unittest import TestCase
 
-from simplifiedapp.introspection import object_metadata
+from simplifiedapp._introspection import object_metadata
 
-from fixtures import introspection as introspection_fixture
+from fixtures import _introspection as introspection_fixture
 
 VERSION_REGEXP = r'\d+\.\d+\.\d+(?:\.(dev|post)\d+)?'
 
@@ -15,6 +15,8 @@ class TestObjectMetadataCallable(TestCase):
 	'''
 	Tests callable for the object_metadata function
 	'''
+	
+	maxDiff = None
 	
 	def setUp(self):
 		self.metadata = object_metadata(introspection_fixture.test_callable)
@@ -56,12 +58,14 @@ class TestObjectMetadataCallable(TestCase):
 		'''
 		
 		expected_value = {
+			'args': {'description': 'Any other positional arguments'},
 			'kw1': {'description': 'First key word test parameter'},
-			'kw2': {'description': 'Second key word test parameter'},
+			'kw2': {'description': 'Second key word test parameter', 'is_optional': True, 'type_name': 'bool'},
+			'kwargs': {'description': 'All other keyword arguments'},
 			'mult1': {'description': 'First pos/kw test parameter'},
 			'mult2': {'description': 'Second pos/kw test parameter with default'},
 			'pos1': {'description': 'First positional test parameter', 'is_optional': False, 'type_name': 'float'},
-			'pos2': {'description': 'Second positional test parameter', 'is_optional': True, 'type_name': 'bool'},
+			'pos2': {'description': 'Second positional test parameter'},
 		}
 		self.assertDictEqual(expected_value, self.metadata['parameters'])
 		
@@ -154,7 +158,7 @@ class TestObjectMetadataModule(TestCase):
 		Testing the correct detection of name
 		'''
 		
-		expected_value = 'fixtures.introspection'
+		expected_value = 'fixtures._introspection'
 		self.assertEqual(expected_value, self.metadata['name'])
 	
 	def test_version(self):
