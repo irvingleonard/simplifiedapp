@@ -6,11 +6,11 @@ ToDo:
 - Everything
 '''
 
-from argparse import ArgumentParser
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, RawDescriptionHelpFormatter
 from logging import getLogger
 import sys
 
-from docstring_parser import parse as docstring_parse
+from ._introspection import object_metadata, parameters_from_callable
 
 __version__ = '0.8.0dev0'
 
@@ -24,8 +24,103 @@ PPRINT_WIDTH = 270
 OS_FILES = ('.DS_Store')
 
 
-class BaseParser(ArgumentParser):
-    pass
+class LocalFormatterClass(ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter):
+	'''
+	'''
+	
+	pass
+
+
+class IntrospectedArgumentParser(ArgumentParser):
+	'''
+	'''
+	
+	@classmethod
+	def _prepare_callable_parameter(cls, parameter_name, /, **details):
+		'''Extends argument's values
+		Uses the defaults, annotations and docstring to extend the argument values (type, action, etc.)
+		
+		ToDo:
+		- Documentation
+		'''
+		
+		return details
+
+		# arg_values['help'] = 'ToDo: help string not supported yet'
+
+		if arg_name in annotations:
+			if isclass(annotations[arg_name]):
+				arg_values['type'] = annotations[arg_name]
+			elif isinstance(annotations[arg_name], tuple) or isinstance(annotations[arg_name], list):
+				arg_values['choices'] = annotations[arg_name]
+		elif 'default' in arg_values:
+			if arg_values['default'] is None:
+				arg_values['default'] = ARGPARSE_SUPPRESS
+			elif type(arg_values['default']) != str:
+				if isinstance(arg_values['default'], bool):
+					if arg_values['default']:
+						arg_values['action'] = 'store_false'
+					else:
+						arg_values['action'] = 'store_true'
+				elif isinstance(arg_values['default'], (tuple, list)):
+					arg_values['action'] = 'extend' if ADD_ARGUMENT_ACTION_EXTEND else 'append'
+					arg_values['default'] = []
+					if 'nargs' not in arg_values:
+						arg_values['nargs'] = '+'
+				elif isinstance(arg_values['default'], dict):
+					arg_values['action'] = 'extend' if ADD_ARGUMENT_ACTION_EXTEND else 'append'
+					arg_values['nargs'] = '+'
+					arg_values['default'] = []
+					if 'help' not in arg_values:
+						arg_values['help'] = ''
+					arg_values['help'] += '(Use the key=value format for each entry)'
+				else:
+					arg_values['type'] = type(arg_values['default'])
+
+		return arg_values
+	
+	@classmethod
+	def params_from_callable(cls, callable_, from_class = False):
+		'''Extract argparse info from callable
+		Uses introspection to build a dict out of a callable, usable to build an argparse tree.
+		
+		ToDo:
+		- Documentation
+		'''
+		
+		callable_metadata = object_metadata(callable_)
+		parameters = parameters_from_callable(callable_, callable_metadata = callable_metadata, from_class = from_class)
+		parameters = {'_'.join(callable_metadata['name'], parameter) : cls._prepare_callable_parameter(parameter, **details) for parameter, details in parameters.items()}
+		
+		result = cls(prog='', description='', epilog='', formatter_class=LocalFormatterClass)
+		result = cls()
+		return result
+		
+		if from_class:
+			is_boundmethod = False
+			if len(args):
+				if args[0] == 'self':
+					is_boundmethod = True
+					args.pop(0)
+				elif args[0] in ['cls', 'type']:
+					args.pop(0)
+
+		metadata = object_metadata(callable_)
+
+		arguments = {arg : param_metadata(arg, arg_values, annotations, docstring = '') for arg, arg_values in req_args.items()}
+		arguments.update({('-{}' if len(arg) == 1 else '--{}').format(arg) : param_metadata(arg, arg_values, annotations, docstring = '') for arg, arg_values in opt_args.items()})
+
+		arguments[False] = {'__simplifiedapp_' : (callable_, tuple(args), varargs, tuple(kwonlyargs), varkw)}
+		if from_class:
+			if is_boundmethod:
+				arguments[False] = {'__simplifiedapp_' : (metadata['name'], tuple(args), varargs, tuple(kwonlyargs), varkw)}
+
+		arguments[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}
+		if 'version' in metadata:
+			arguments['--version'] = {'action' : 'version', 'version' : metadata['version']}
+
+		LOGGER.debug('Generated arguments: %s', arguments)
+		return arguments
 
 
 def main(target = None, sys_argv = None):
