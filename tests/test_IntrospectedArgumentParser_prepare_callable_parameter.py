@@ -6,7 +6,7 @@ Testing of argparse handling in simplifiedapp
 from argparse import SUPPRESS
 from unittest import TestCase
 
-from simplifiedapp import IntrospectedArgumentParser, LocalFormatterClass, object_metadata
+from simplifiedapp import IntrospectedArgumentParser, LocalFormatterClass, object_metadata, parameters_from_callable
 
 class TestIntrospectedArgumentParserPrepareCallableParameter(TestCase):
 	'''
@@ -97,20 +97,16 @@ class TestIntrospectedArgumentParserPrepareCallableParameter(TestCase):
 		expected_complex_result = {'default': (6+12j), 'type': complex}
 		self.assertEqual(expected_complex_result, self.test_object(default=(6+12j)))
 
-	def _test_function_w_kwargs(self):
+	def test_parameter_w_annotations(self):
 		'''
-		Test ArgparseParser.from_callable with function containing a variable keyword arguments parameter (*kwargs)
+		Test IntrospectedArgumentParser._prepare_callable_parameter with annotations
 		'''
-		
-		def fixture_function_w_kwargs(**kwargs):
-			pass
 
-		expected_arguments = (
-				ARGUMENT_CLASS('kwargs', action = 'extend', default = [], nargs = '+', help = '(Use the key=value format for each entry)'),
-		)
-		expected_result = PARSER_CLASS(*expected_arguments, defaults = {'__simplifiedapp_' : (fixture_function_w_kwargs, (), None, (), 'kwargs')})
-
-		self.assertEqual(self.test_object(fixture_function_w_kwargs), expected_result)
+		from fixtures import _introspection as introspection_fixture
+		tst = parameters_from_callable(introspection_fixture.test_callable, callable_metadata=object_metadata(introspection_fixture.test_callable))
+		expected_result = {}
+		self.assertEqual(expected_result, tst['pos2'])
+		#self.assertEqual(expected_result, self.test_object(tst['kw2']['annotations']))
 
 	def _test_function_w_annotations(self):
 		'''
