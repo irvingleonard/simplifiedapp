@@ -35,6 +35,25 @@ class IntrospectedArgumentParser(ArgumentParser):
 	'''
 	'''
 	
+	ATTRIBUTES_TO_COMPARE = ('prog', 'usage', 'epilog', 'formatter_class', 'fromfile_prefix_chars', 'add_help', 'allow_abbrev', 'exit_on_error', '_subparsers')
+	
+	def __eq__(self, other):
+		'''
+		'''
+		
+		for attr in self.ATTRIBUTES_TO_COMPARE:
+			if getattr(self, attr) != getattr(other, attr):
+				print('Attribute does not match: ', attr, getattr(self, attr), getattr(other, attr))
+				return False
+		
+		#implement a method to compare argparse._ArgumentGroup instances for equality
+		
+		#compare _positionals
+		
+		#compare _optionals
+		
+		return True
+	
 	@classmethod
 	def _prepare_callable_parameter(cls, parameter_name, /, **details):
 		'''Extends argument's values
