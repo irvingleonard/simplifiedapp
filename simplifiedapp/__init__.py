@@ -24,6 +24,69 @@ PPRINT_WIDTH = 270
 OS_FILES = ('.DS_Store')
 
 
+class ComparableObject:
+	'''
+	'''
+	
+	ATTRIBUTES_FOR_COMPARISON = {
+		'_ArgumentGroup' : (
+			'description', 'argument_default', 'prefix_chars', 'conflict_handler'
+		),
+		'ArgumentParser' : (
+			'description', 'argument_default', 'prefix_chars', 'conflict_handler',
+			'prog', 'usage', 'epilog', 'formatter_class', 'fromfile_prefix_chars', 'add_help', 'allow_abbrev', 'exit_on_error',
+			'_subparsers', '_mutually_exclusive_groups', '_defaults', '_has_negative_number_optionals',
+		),
+		
+	}
+	DUMB_ATTRIBUTES_FOR_COMPARISON = {
+		'ArgumentParser' : ('_positionals',)
+	}
+	COLLECTIONS_FOR_COMPARISON = {}
+	MAPPINGS_FOR_COMPARISON = {}
+	
+	
+	
+	def __init__(self, obj):
+		self._comparable_object_please_please_dont_use_the_name = obj
+		
+	def __getattr__(self, name):
+		return getattr(self._comparable_object_please_please_dont_use_the_name, name)
+
+	def __eq__(self, other, /):
+		'''
+		'''
+		
+		print(vars(self._comparable_object_please_please_dont_use_the_name))
+		
+		my_type, other_type = type(self._comparable_object_please_please_dont_use_the_name), type(other)
+		if not issubclass(my_type, other_type) or not issubclass(other_type, my_type):
+			return False
+		
+		if (my_type.__name__ not in self.ATTRIBUTES_FOR_COMPARISON) and (my_type.__name__ not in self.DUMB_ATTRIBUTES_FOR_COMPARISON) and (my_type.__name__ not in self.COLLECTIONS_FOR_COMPARISON) and (my_type.__name__ not in self.MAPPINGS_FOR_COMPARISON):
+			LOGGER.warning("Don't know how to compare %s and %s", my_type, other_type)
+			return self._comparable_object_please_please_dont_use_the_name == other
+		
+		for attr in self.ATTRIBUTES_FOR_COMPARISON.get(my_type.__name__, []):
+			if getattr(self, attr) != getattr(other, attr):
+				return False
+		
+		for attr in self.DUMB_ATTRIBUTES_FOR_COMPARISON.get(my_type.__name__, []):
+			if ComparableObject(getattr(self, attr)) != getattr(other, attr):
+				print('Attribute does not match: ', attr, getattr(self, attr), getattr(other, attr))
+				return False
+		
+		for attribute_name in self.COLLECTIONS_FOR_COMPARISON.get(my_type.__name__, []):
+			if [ComparableObject(item) for item in getattr(self, attribute_name)] != getattr(other, attribute_name):
+				return False
+		
+		for attribute_name in self.MAPPINGS_FOR_COMPARISON.get(my_type.__name__, []):
+			if {key : ComparableObject(value) for key, value in getattr(self, attribute_name).items()} != getattr(other, attribute_name):
+				return False
+		
+		return True
+
+
 class LocalFormatterClass(ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter):
 	'''
 	'''
@@ -35,24 +98,11 @@ class IntrospectedArgumentParser(ArgumentParser):
 	'''
 	'''
 	
-	ATTRIBUTES_TO_COMPARE = ('prog', 'usage', 'epilog', 'formatter_class', 'fromfile_prefix_chars', 'add_help', 'allow_abbrev', 'exit_on_error', '_subparsers')
-	
 	def __eq__(self, other):
 		'''
 		'''
 		
-		for attr in self.ATTRIBUTES_TO_COMPARE:
-			if getattr(self, attr) != getattr(other, attr):
-				print('Attribute does not match: ', attr, getattr(self, attr), getattr(other, attr))
-				return False
-		
-		#implement a method to compare argparse._ArgumentGroup instances for equality
-		
-		#compare _positionals
-		
-		#compare _optionals
-		
-		return True
+		return ComparableObject(self) == other
 	
 	@classmethod
 	def _prepare_callable_parameter(cls, parameter_name, /, **details):
