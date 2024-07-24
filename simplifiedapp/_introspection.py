@@ -56,7 +56,7 @@ def object_metadata(obj):
 
 	return metadata
 
-def parameters_from_callable(callable_, callable_metadata = None, from_class = False):
+def parameters_from_callable(callable_, callable_metadata=None, from_class=False):
 	'''Callable parameters details
 	Uses introspection to extract the parameters required/allowed by callable and as much details as possible from them.
 	
@@ -83,14 +83,14 @@ def parameters_from_callable(callable_, callable_metadata = None, from_class = F
 	if kwonlydefaults is None:
 		kwonlydefaults = {}
 	
-	parameters = {arg : {} for arg in args[:len(args)-len(defaults)]}
+	parameters = {arg : {'positional' : True} for arg in args[:len(args)-len(defaults)]}
 	for i in range(len(defaults)):
-		parameters[args[-len(defaults)+i]] = {'default' : defaults[i]}
+		parameters[args[-len(defaults)+i]] = {'default' : defaults[i], 'positional' : True}
 	if varargs is not None:
-		parameters[varargs] = {'default' : (), 'type' : tuple}
-	parameters.update({kwarg : {'default' : kwonlydefaults[kwarg]} if kwarg in kwonlydefaults else {} for kwarg in kwonlyargs})
+		parameters[varargs] = {'default' : (), 'positional' : True}
+	parameters.update({kwarg : {'default' : kwonlydefaults[kwarg], 'positional' : False} if kwarg in kwonlydefaults else {'positional' : False} for kwarg in kwonlyargs})
 	if varkw is not None:
-		parameters[varkw] = {'default' : {}, 'type' : dict}
+		parameters[varkw] = {'default' : {}, 'positional' : False}
 	
 	for param, annotation in annotations.items():
 		parameters[param]['annotation'] = annotation
