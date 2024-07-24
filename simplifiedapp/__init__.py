@@ -6,11 +6,12 @@ ToDo:
 - Everything
 '''
 
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, RawDescriptionHelpFormatter
+from argparse import SUPPRESS, ArgumentDefaultsHelpFormatter, ArgumentParser, RawDescriptionHelpFormatter
 from logging import getLogger
 import sys
 
 from ._introspection import object_metadata, parameters_from_callable
+from . import argparse_patched
 
 __version__ = '0.8.0dev0'
 
@@ -23,68 +24,11 @@ DEFAULT_LOG_PARAMETERS = {
 PPRINT_WIDTH = 270
 OS_FILES = ('.DS_Store')
 
-
-class ComparableObject:
+def dict_type_converter(input_string):
 	'''
 	'''
 	
-	ATTRIBUTES_FOR_COMPARISON = {
-		'_ArgumentGroup' : (
-			'description', 'argument_default', 'prefix_chars', 'conflict_handler'
-		),
-		'ArgumentParser' : (
-			'description', 'argument_default', 'prefix_chars', 'conflict_handler',
-			'prog', 'usage', 'epilog', 'formatter_class', 'fromfile_prefix_chars', 'add_help', 'allow_abbrev', 'exit_on_error',
-			'_subparsers', '_mutually_exclusive_groups', '_defaults', '_has_negative_number_optionals',
-		),
-		
-	}
-	DUMB_ATTRIBUTES_FOR_COMPARISON = {
-		'ArgumentParser' : ('_positionals',)
-	}
-	COLLECTIONS_FOR_COMPARISON = {}
-	MAPPINGS_FOR_COMPARISON = {}
-	
-	
-	
-	def __init__(self, obj):
-		self._comparable_object_please_please_dont_use_the_name = obj
-		
-	def __getattr__(self, name):
-		return getattr(self._comparable_object_please_please_dont_use_the_name, name)
-
-	def __eq__(self, other, /):
-		'''
-		'''
-		
-		print(vars(self._comparable_object_please_please_dont_use_the_name))
-		
-		my_type, other_type = type(self._comparable_object_please_please_dont_use_the_name), type(other)
-		if not issubclass(my_type, other_type) or not issubclass(other_type, my_type):
-			return False
-		
-		if (my_type.__name__ not in self.ATTRIBUTES_FOR_COMPARISON) and (my_type.__name__ not in self.DUMB_ATTRIBUTES_FOR_COMPARISON) and (my_type.__name__ not in self.COLLECTIONS_FOR_COMPARISON) and (my_type.__name__ not in self.MAPPINGS_FOR_COMPARISON):
-			LOGGER.warning("Don't know how to compare %s and %s", my_type, other_type)
-			return self._comparable_object_please_please_dont_use_the_name == other
-		
-		for attr in self.ATTRIBUTES_FOR_COMPARISON.get(my_type.__name__, []):
-			if getattr(self, attr) != getattr(other, attr):
-				return False
-		
-		for attr in self.DUMB_ATTRIBUTES_FOR_COMPARISON.get(my_type.__name__, []):
-			if ComparableObject(getattr(self, attr)) != getattr(other, attr):
-				print('Attribute does not match: ', attr, getattr(self, attr), getattr(other, attr))
-				return False
-		
-		for attribute_name in self.COLLECTIONS_FOR_COMPARISON.get(my_type.__name__, []):
-			if [ComparableObject(item) for item in getattr(self, attribute_name)] != getattr(other, attribute_name):
-				return False
-		
-		for attribute_name in self.MAPPINGS_FOR_COMPARISON.get(my_type.__name__, []):
-			if {key : ComparableObject(value) for key, value in getattr(self, attribute_name).items()} != getattr(other, attribute_name):
-				return False
-		
-		return True
+	return input_string
 
 
 class LocalFormatterClass(ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter):
@@ -97,15 +41,9 @@ class LocalFormatterClass(ArgumentDefaultsHelpFormatter, RawDescriptionHelpForma
 class IntrospectedArgumentParser(ArgumentParser):
 	'''
 	'''
-	
-	def __eq__(self, other):
-		'''
-		'''
 		
-		return ComparableObject(self) == other
-	
 	@classmethod
-	def _prepare_callable_parameter(cls, parameter_name, /, **details):
+	def _prepare_callable_parameter(cls, **details):
 		'''Extends argument's values
 		Uses the defaults, annotations and docstring to extend the argument values (type, action, etc.)
 		
@@ -113,7 +51,40 @@ class IntrospectedArgumentParser(ArgumentParser):
 		- Documentation
 		'''
 		
-		return details
+		result = {}
+		if 'default' in details:
+			if details['default'] is None:
+				result['default'] = SUPPRESS
+			elif isinstance(details['default'], str):
+				result['default'] = details['default']
+			elif isinstance(details['default'], bool):
+				if details['default']:
+					result['action'] = 'store_false'
+				else:
+					result['action'] = 'store_true'
+			elif isinstance(details['default'], (frozenset, set, tuple, list)):
+				result['action'] = 'extend'
+				result['default'] = details['default']
+				if 'nargs' not in result:
+					result['nargs'] = '*'
+			elif isinstance(details['default'], dict):
+				result['action'] = 'extend'
+				result['nargs'] = '*'
+				result['default'] = ['='.join((str(key), str(value))) for key, value in details['default'].items()]
+				if 'help' not in result:
+					result['help'] = ''
+				result['help'] += '(Use the key=value format for each entry)'
+			else:
+				result['type'] = type(details['default'])
+				result['default'] = details['default']
+		elif ('positional' in details) and not details['positional']:
+			result['required'] = True
+			
+		if 'annotation' in details:
+			print(details['annotation'])
+			
+		
+		return result
 
 		# arg_values['help'] = 'ToDo: help string not supported yet'
 
@@ -149,7 +120,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 		return arg_values
 	
 	@classmethod
-	def params_from_callable(cls, callable_, from_class = False):
+	def from_callable(cls, callable_, from_class=False):
 		'''Extract argparse info from callable
 		Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 		
@@ -158,12 +129,27 @@ class IntrospectedArgumentParser(ArgumentParser):
 		'''
 		
 		callable_metadata = object_metadata(callable_)
-		parameters = parameters_from_callable(callable_, callable_metadata = callable_metadata, from_class = from_class)
-		parameters = {'_'.join(callable_metadata['name'], parameter) : cls._prepare_callable_parameter(parameter, **details) for parameter, details in parameters.items()}
 		
-		result = cls(prog='', description='', epilog='', formatter_class=LocalFormatterClass)
-		result = cls()
+		result = cls(prog=callable_metadata['name'], description=callable_metadata.get('description', None), epilog=callable_metadata.get('long_description', None), formatter_class=LocalFormatterClass)
+		
 		return result
+	
+	@classmethod
+	def params_from_callable(cls, callable_, callable_metadata=None, from_class=False):
+		'''Extract argparse info from callable
+		Uses introspection to build a dict out of a callable, usable to build an argparse tree.
+		
+		ToDo:
+		- Documentation
+		'''
+		
+		parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata, from_class=from_class)
+		parameters = {'_'.join((callable_metadata['name'], parameter)) : cls._prepare_callable_parameter(parameter, **details) for parameter, details in parameters.items()}
+		return parameters
+		for parameter_name, parameter_details in parameters.items():
+			result
+		
+		
 		
 		if from_class:
 			is_boundmethod = False
