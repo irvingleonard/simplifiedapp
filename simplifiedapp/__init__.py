@@ -51,7 +51,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 		- Documentation
 		'''
 		
-		result = {}
+		result, errors, warnings = {}, [], []
 		if 'default' in details:
 			if details['default'] is None:
 				result['default'] = SUPPRESS
@@ -81,43 +81,20 @@ class IntrospectedArgumentParser(ArgumentParser):
 			result['required'] = True
 			
 		if 'annotation' in details:
-			print(details['annotation'])
-			
+			LOGGER.warning('Type hinting from parameter annotation is not supported yet')
+
+		if 'docstring' in details:
+			if 'type_name' in details['docstring']:
+				LOGGER.warning('Type hinting from docstring is not supported yet')
+			if 'is_optional' in details['docstring']:
+				if details['docstring']['is_optional'] and ('default' not in details):
+					errors.append('''Type hinting for parameter "{parameter_name}" from "{parent_description}" suggests it's optional but doesn't match "{parent_description}"'s signature''')
+				elif (not details['docstring']['is_optional']) and ('default' in details):
+					warnings.append('''Type hinting for parameter "{parameter_name}" from "{parent_description}" suggests it's required but doesn't match "{parent_description}"'s signature''')
+			if 'description' in details['docstring']:
+				result['help'] = details['docstring']['description']
 		
-		return result
-
-		# arg_values['help'] = 'ToDo: help string not supported yet'
-
-		if arg_name in annotations:
-			if isclass(annotations[arg_name]):
-				arg_values['type'] = annotations[arg_name]
-			elif isinstance(annotations[arg_name], tuple) or isinstance(annotations[arg_name], list):
-				arg_values['choices'] = annotations[arg_name]
-		elif 'default' in arg_values:
-			if arg_values['default'] is None:
-				arg_values['default'] = ARGPARSE_SUPPRESS
-			elif type(arg_values['default']) != str:
-				if isinstance(arg_values['default'], bool):
-					if arg_values['default']:
-						arg_values['action'] = 'store_false'
-					else:
-						arg_values['action'] = 'store_true'
-				elif isinstance(arg_values['default'], (tuple, list)):
-					arg_values['action'] = 'extend' if ADD_ARGUMENT_ACTION_EXTEND else 'append'
-					arg_values['default'] = []
-					if 'nargs' not in arg_values:
-						arg_values['nargs'] = '+'
-				elif isinstance(arg_values['default'], dict):
-					arg_values['action'] = 'extend' if ADD_ARGUMENT_ACTION_EXTEND else 'append'
-					arg_values['nargs'] = '+'
-					arg_values['default'] = []
-					if 'help' not in arg_values:
-						arg_values['help'] = ''
-					arg_values['help'] += '(Use the key=value format for each entry)'
-				else:
-					arg_values['type'] = type(arg_values['default'])
-
-		return arg_values
+		return result, errors, warnings
 	
 	@classmethod
 	def from_callable(cls, callable_, from_class=False):
@@ -143,8 +120,20 @@ class IntrospectedArgumentParser(ArgumentParser):
 		- Documentation
 		'''
 		
-		parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata, from_class=from_class)
-		parameters = {'_'.join((callable_metadata['name'], parameter)) : cls._prepare_callable_parameter(parameter, **details) for parameter, details in parameters.items()}
+		raw_parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata, from_class=from_class)
+		if 'version' in callable_metadata:
+			raw_parameters['version'] = {'action' : 'version', 'version' : callable_metadata['version']}
+		parameters = {}
+		for parameter, details in raw_parameters.items():
+			parameter_args, errors, warnings = cls._prepare_callable_parameter(**details)
+			for error in  errors:
+				LOGGER.error(error.format(parameter_name=parameter, parent_description=callable_metadata['name']))
+			for warning in  warnings:
+				LOGGER.warning(warning.format(parameter_name=parameter, parent_description=callable_metadata['name']))
+			parameter_name = '_'.join((callable_metadata['name'], parameter))
+			parameter_name = parameter_name.replace('_', '-')
+			parameters[parameter_name] = parameter_args
+
 		return parameters
 		for parameter_name, parameter_details in parameters.items():
 			result
@@ -171,8 +160,6 @@ class IntrospectedArgumentParser(ArgumentParser):
 				arguments[False] = {'__simplifiedapp_' : (metadata['name'], tuple(args), varargs, tuple(kwonlyargs), varkw)}
 
 		arguments[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}
-		if 'version' in metadata:
-			arguments['--version'] = {'action' : 'version', 'version' : metadata['version']}
 
 		LOGGER.debug('Generated arguments: %s', arguments)
 		return arguments
