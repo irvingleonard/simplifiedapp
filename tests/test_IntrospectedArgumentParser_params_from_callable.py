@@ -118,6 +118,19 @@ class TestIntrospectedArgumentParserParamsFromCallable(TestCase):
 		}
 		self.assertEqual(expected_result, self.test_object(fixture_function_w_default_keyword_args, callable_metadata=object_metadata(fixture_function_w_default_keyword_args)))
 
+	def test_function_w_version(self):
+		'''
+		Test IntrospectedArgumentParser.params_from_callable with function having keyword arguments
+		'''
+
+		def fixture_function_w_version():
+			pass
+		fixture_function_w_version.__version__ = '0.1'
+
+		expected_result = {'fixture-function-w-version-version': {'action': 'version', 'version': '0.1'}}
+		self.assertEqual(expected_result, self.test_object(fixture_function_w_version, callable_metadata=object_metadata(fixture_function_w_version)))
+
+
 	def test_all_parameter_combinations(self):
 		'''
 		Test IntrospectedArgumentParser.params_from_callable with all possible parameter variations

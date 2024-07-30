@@ -7,10 +7,11 @@ ToDo:
 '''
 
 from argparse import SUPPRESS, ArgumentDefaultsHelpFormatter, ArgumentParser, RawDescriptionHelpFormatter
+from inspect import getmodule, stack
 from logging import getLogger
 import sys
 
-from ._introspection import object_metadata, parameters_from_callable
+from ._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, get_target, object_metadata, parameters_from_callable
 from . import argparse_patched
 
 __version__ = '0.8.0dev0'
@@ -93,7 +94,11 @@ class IntrospectedArgumentParser(ArgumentParser):
 					warnings.append('''Type hinting for parameter "{parameter_name}" from "{parent_description}" suggests it's required but doesn't match "{parent_description}"'s signature''')
 			if 'description' in details['docstring']:
 				result['help'] = details['docstring']['description']
-		
+
+		if 'version' in details:
+			result.update(details)
+			result['action'] = 'version'
+
 		return result, errors, warnings
 	
 	@classmethod
@@ -104,11 +109,15 @@ class IntrospectedArgumentParser(ArgumentParser):
 		ToDo:
 		- Documentation
 		'''
-		
+
+		LOGGER.debug('Generating parser data for callable: %s', callable_)
 		callable_metadata = object_metadata(callable_)
-		
+
 		result = cls(prog=callable_metadata['name'], description=callable_metadata.get('description', None), epilog=callable_metadata.get('long_description', None), formatter_class=LocalFormatterClass)
-		
+		parameters = cls.params_from_callable(callable_, callable_metadata=callable_metadata)
+		for parameter_name, kwargs in parameters.items():
+			result.add_argument('--{}'.format(parameter_name), **kwargs)
+
 		return result
 	
 	@classmethod
@@ -119,10 +128,12 @@ class IntrospectedArgumentParser(ArgumentParser):
 		ToDo:
 		- Documentation
 		'''
-		
+
+		if callable_metadata is None:
+			callable_metadata = {}
 		raw_parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata, from_class=from_class)
 		if 'version' in callable_metadata:
-			raw_parameters['version'] = {'action' : 'version', 'version' : callable_metadata['version']}
+			raw_parameters['version'] = {'version' : callable_metadata['version']}
 		parameters = {}
 		for parameter, details in raw_parameters.items():
 			parameter_args, errors, warnings = cls._prepare_callable_parameter(**details)
@@ -135,11 +146,8 @@ class IntrospectedArgumentParser(ArgumentParser):
 			parameters[parameter_name] = parameter_args
 
 		return parameters
-		for parameter_name, parameter_details in parameters.items():
-			result
-		
-		
-		
+
+
 		if from_class:
 			is_boundmethod = False
 			if len(args):
@@ -177,14 +185,14 @@ def main(target = None, sys_argv = None):
 	- input_file: if this is set, it should contain the path to an input file and a second parameter stating the format. The file will be parsed an used as part of the configuration.
 	- json: transforms the resulting object into a json string. If the result is a string this won't happen.
 	- _json_default: if this is set, it should point to a function that will be used in the json conversion as the default casting. If not defined, "str" is then used (everything is casted to string).
-	
+
 	A callable will be called and passed all the configuration options. In the case of a class method, a class instance will be created first, passing all the configuration to the constructor and then the instance method will be called with all the configuration.
 
 	Results; if your code returns:
 	- a string, it will be printed as is.
 	- any other type of object will be printed with pprint
 	- any other type of object, and the json flag was passed as True, then it will be printed as a json string (json.dumps)
-	
+
 	ToDo:
 	- Implement a multipass algorithm, early loading the input_files
 	- Generalize "output" via output_file (instead of the lonely json)
@@ -195,27 +203,40 @@ def main(target = None, sys_argv = None):
 	if sys_argv is None:
 		sys_argv = sys.argv[1:] if len(sys.argv) > 1 else []
 
-	complete_input = {}
-	first_pass = BuiltinParser().parse_args(sys_argv)
+	target, target_type = get_target(target=target)
 
-	if first_pass is not None:
-		log_parameters = DEFAULT_LOG_PARAMETERS.copy()
+	if target_type == IS_MODULE:
+		LOGGER.debug('Generating parser data for target as a module')
+		arg_parser_data.update(module_args(target))
+	elif target_type == IS_CLASS:
+		LOGGER.debug('Generating parser data for target as a class')
+		arg_parser_data.update(class_args(target))
+	elif target_type == IS_CALLABLE:
+		arg_parser_data.update(callable_args(target))
+	else:
+		raise RuntimeError('Unknown target type "{}"'.format(target_type))
 
-		if hasattr(first_pass, 'log_level') and len(first_pass.log_level):
-			log_parameters['level'] = first_pass.log_level.upper()
-
-		if hasattr(first_pass, 'log_to_syslog') and first_pass.log_to_syslog:
-			log_parameters['handlers'] = [logging.handlers.SysLogHandler(address = '/dev/log')]
-
-		logging.basicConfig(**log_parameters)
-		LOGGER.debug('Logging configured  with: %s', log_parameters)
-
-		if hasattr(first_pass, 'input_file'):
-			for input_ in first_pass.input_file:
-				LOGGER.debug('Merging values from %s', input_)
-				complete_input = complete_input | input_
-
-	caller = inspect.getmodule(inspect.stack()[1][0])
+	# complete_input = {}
+	# first_pass = BuiltinParser().parse_args(sys_argv)
+	#
+	# if first_pass is not None:
+	# 	log_parameters = DEFAULT_LOG_PARAMETERS.copy()
+	#
+	# 	if hasattr(first_pass, 'log_level') and len(first_pass.log_level):
+	# 		log_parameters['level'] = first_pass.log_level.upper()
+	#
+	# 	if hasattr(first_pass, 'log_to_syslog') and first_pass.log_to_syslog:
+	# 		log_parameters['handlers'] = [logging.handlers.SysLogHandler(address = '/dev/log')]
+	#
+	# 	logging.basicConfig(**log_parameters)
+	# 	LOGGER.debug('Logging configured  with: %s', log_parameters)
+	#
+	# 	if hasattr(first_pass, 'input_file'):
+	# 		for input_ in first_pass.input_file:
+	# 			LOGGER.debug('Merging values from %s', input_)
+	# 			complete_input = complete_input | input_
+	#
+	caller = getmodule(stack()[1][0])
 	LOGGER.debug('Got caller: %s', caller)
 
 	if target is None:
@@ -266,7 +287,7 @@ def main(target = None, sys_argv = None):
 	LOGGER.debug('Complete input before CLI merge: %s', complete_input)
 	complete_input.update(vars(args))
 	LOGGER.debug('Complete input is: %s', complete_input)
-	
+
 	if hasattr(args, '__simplifiedapp_'):
 		if len(args.__simplifiedapp_) == 2:
 			instance_call, method_call = args.__simplifiedapp_
