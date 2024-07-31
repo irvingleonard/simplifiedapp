@@ -16,7 +16,7 @@ def objects_are_family(first, second, raise_exception=True):
 	'''
 	
 	first_type, second_type = type(first), type(second)
-	print('Comparing', first_type, 'and', second_type, sep=' ')
+	# print('Comparing', first_type, 'and', second_type, sep=' ')
 	if issubclass(first_type, second_type) or issubclass(second_type, first_type):
 		return True
 	else:
@@ -50,7 +50,7 @@ def compare_objects(self, other, /):
 		my_vars = {key : value for key, value in my_vars.items() if key not in self.ATTRIBUTE_EQUALITY_IGNORE_LIST}
 	if hasattr(other, 'ATTRIBUTE_EQUALITY_IGNORE_LIST'):
 		other_vars = {key : value for key, value in other_vars.items() if key not in other.ATTRIBUTE_EQUALITY_IGNORE_LIST}
-	print('Comparing vars', my_vars, 'and', other_vars, sep=' ')
+	# print('Comparing vars', my_vars, 'and', other_vars, sep=' ')
 	result = my_vars == other_vars
 	if not result:
 		print('Found a discrepancy: \n{}\nand\n{}'.format(pformat(my_vars), pformat(other_vars)))
@@ -64,6 +64,7 @@ argparse._ActionsContainer.__eq__ = compare_objects
 ### Ignoring attributes to avoid errors ###
 
 argparse._HelpAction.ATTRIBUTE_EQUALITY_IGNORE_LIST = ('container',)
+argparse._VersionAction.ATTRIBUTE_EQUALITY_IGNORE_LIST = ('container',)
 
 ### ArgumentParser equality special ###
 
