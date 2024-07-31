@@ -8,10 +8,12 @@ ToDo:
 
 from argparse import SUPPRESS, ArgumentDefaultsHelpFormatter, ArgumentParser, RawDescriptionHelpFormatter
 from inspect import getmodule, stack
-from logging import getLogger
+from logging import basicConfig as logging_basicConfig, getLogger
+from logging.handlers import SysLogHandler
+from pprint import pprint as pretty_print
 import sys
 
-from ._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, get_target, object_metadata, parameters_from_callable
+from ._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, execute_callable, get_target, object_metadata, parameters_from_callable
 from . import argparse_patched
 
 __version__ = '0.8.0dev0'
@@ -133,6 +135,8 @@ class IntrospectedArgumentParser(ArgumentParser):
 		for parameter_name, kwargs in parameters.items():
 			result.add_argument('--{}'.format(parameter_name), **kwargs)
 
+		result.set_defaults(callable=callable_)
+
 		return result
 
 	@classmethod
@@ -237,24 +241,48 @@ def main(target = None, sys_argv = None):
 		sys_argv = sys.argv[1:] if len(sys.argv) > 1 else []
 
 	base_parser = IntrospectedArgumentParser.new_base_parser()
+	base_values, sys_argv = base_parser.parse_known_args(sys_argv)
+	initial_values = vars(base_values)
+
+	log_parameters = DEFAULT_LOG_PARAMETERS.copy()
+	if hasattr(base_values, 'log_level') and len(base_values.log_level):
+		log_parameters['level'] = base_values.log_level.upper()
+	if hasattr(base_values, 'log_to_syslog') and base_values.log_to_syslog:
+		log_parameters['handlers'] = [SysLogHandler(address = '/dev/log')]
+	logging_basicConfig(**log_parameters)
+	LOGGER.debug('Logging configured  with: %s', log_parameters)
 
 	target, target_type = get_target(target=target)
 
 	if target_type == IS_MODULE:
 		LOGGER.debug('Generating parser data for target as a module')
-		# parser = IntrospectedArgumentParser.from_callable(callable_=target)
+		raise NotImplementedError('Module target')
 	elif target_type == IS_CLASS:
 		LOGGER.debug('Generating parser data for target as a class')
-		arg_parser_data.update(class_args(target))
+		raise NotImplementedError('Class target')
 	elif target_type == IS_CALLABLE:
-		parser = IntrospectedArgumentParser.from_callable(callable_=target, parents=[base_parser])
+		parser = IntrospectedArgumentParser.from_callable(callable_=target, parents=[base_parser], initial_values=initial_values)
 	else:
 		raise RuntimeError('Unknown target type "{}"'.format(target_type))
 
+	args = parser.parse_args(sys_argv)
+	kwargs = vars(args)
+	callable_ = kwargs.pop('callable')
+	result = execute_callable(callable_=callable_, kwargs=kwargs)
+
+	if isinstance(result, str):
+		LOGGER.debug('The result is a string. Printing it as is.')
+		print(result, end='')
+	else:
+		if hasattr(args, 'json') and args.json:
+			LOGGER.debug('The result is an object. Printing it as a json string.')
+			print(json.dumps(result, default = args._json_default if hasattr(args, '_json_default') else str))
+		else:
+			LOGGER.debug('The result is an object. Printing it with pprint.')
+			pretty_print(result, width = PPRINT_WIDTH)
 
 
-	result = parser.parse_args(sys_argv)
-	print(result)
+
 	return
 
 	# complete_input = {}
