@@ -42,7 +42,14 @@ class LocalFormatterClass(ArgumentDefaultsHelpFormatter, RawDescriptionHelpForma
 class IntrospectedArgumentParser(ArgumentParser):
 	'''
 	'''
-		
+
+	BUILTIN_OPTIONS = {
+		'log-level'		: {'choices' : ['notset', 'debug', 'info', 'warning', 'error', 'critical'], 'default' : 'info', 'help' : 'minimum severity of the messages to be logged'},
+		'log-to-syslog'	: {'action' : 'store_true', 'default' : False, 'help' : 'send logs to syslog.'},
+		# 'input-file'		: {'action' : InputFiles, 'nargs' : 2, 'default' : argparse.SUPPRESS, 'help' : 'read parameters from a file or standard input (using the "-" special name). Consumes 2 parameters: first one is the path (or "-") and second one is the format'},
+		# 'output-file'		: {'action' : 'store_true', 'default' : False, 'help' : 'output a JSON object as a string'},
+	}
+
 	@classmethod
 	def _prepare_callable_parameter(cls, **details):
 		'''Extends argument's values
@@ -102,7 +109,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 		return result, errors, warnings
 	
 	@classmethod
-	def from_callable(cls, callable_, from_class=False):
+	def from_callable(cls, callable_, from_class=False, parents=None, initial_values={}):
 		'''Extract argparse info from callable
 		Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 		
@@ -113,15 +120,39 @@ class IntrospectedArgumentParser(ArgumentParser):
 		LOGGER.debug('Generating parser data for callable: %s', callable_)
 		callable_metadata = object_metadata(callable_)
 
-		result = cls(prog=callable_metadata['name'], description=callable_metadata.get('description', None), epilog=callable_metadata.get('long_description', None), formatter_class=LocalFormatterClass)
-		parameters = cls.params_from_callable(callable_, callable_metadata=callable_metadata)
+		parser_args = {
+			'prog'				: callable_metadata['name'],
+			'description'		: callable_metadata.get('description', None),
+			'epilog'			: callable_metadata.get('long_description', None),
+			'formatter_class'	: LocalFormatterClass,
+		}
+		if parents is not None:
+			parser_args['parents'] = parents
+		result = cls(**parser_args)
+		parameters = cls.params_from_callable(callable_, callable_metadata=callable_metadata, initial_values=initial_values)
 		for parameter_name, kwargs in parameters.items():
 			result.add_argument('--{}'.format(parameter_name), **kwargs)
 
 		return result
-	
+
 	@classmethod
-	def params_from_callable(cls, callable_, callable_metadata=None, from_class=False):
+	def new_base_parser(cls):
+		'''Return new base parser
+		Builds a base parser, which contains the basic switches added by the module
+
+		ToDo:
+		- Documentation
+		'''
+
+		LOGGER.debug('Creating new base parser')
+		result = cls(formatter_class=LocalFormatterClass, add_help=False)
+		for parameter_name, kwargs in cls.BUILTIN_OPTIONS.items():
+			result.add_argument(('-{}' if len(parameter_name) == 1 else '--{}').format(parameter_name), **kwargs)
+
+		return result
+
+	@classmethod
+	def params_from_callable(cls, callable_, callable_metadata=None, from_class=False, initial_values={}):
 		'''Extract argparse info from callable
 		Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 		
@@ -141,6 +172,8 @@ class IntrospectedArgumentParser(ArgumentParser):
 				LOGGER.error(error.format(parameter_name=parameter, parent_description=callable_metadata['name']))
 			for warning in  warnings:
 				LOGGER.warning(warning.format(parameter_name=parameter, parent_description=callable_metadata['name']))
+			if parameter in initial_values:
+				parameter_args['default'] = initial_values[parameter]
 			parameter_name = '_'.join((callable_metadata['name'], parameter))
 			parameter_name = parameter_name.replace('_', '-')
 			parameters[parameter_name] = parameter_args
@@ -203,18 +236,26 @@ def main(target = None, sys_argv = None):
 	if sys_argv is None:
 		sys_argv = sys.argv[1:] if len(sys.argv) > 1 else []
 
+	base_parser = IntrospectedArgumentParser.new_base_parser()
+
 	target, target_type = get_target(target=target)
 
 	if target_type == IS_MODULE:
 		LOGGER.debug('Generating parser data for target as a module')
-		arg_parser_data.update(module_args(target))
+		# parser = IntrospectedArgumentParser.from_callable(callable_=target)
 	elif target_type == IS_CLASS:
 		LOGGER.debug('Generating parser data for target as a class')
 		arg_parser_data.update(class_args(target))
 	elif target_type == IS_CALLABLE:
-		arg_parser_data.update(callable_args(target))
+		parser = IntrospectedArgumentParser.from_callable(callable_=target, parents=[base_parser])
 	else:
 		raise RuntimeError('Unknown target type "{}"'.format(target_type))
+
+
+
+	result = parser.parse_args(sys_argv)
+	print(result)
+	return
 
 	# complete_input = {}
 	# first_pass = BuiltinParser().parse_args(sys_argv)
@@ -260,7 +301,7 @@ def main(target = None, sys_argv = None):
 		LOGGER.debug('Target is an object: %s', target)
 
 	result = ArgparseParser.from_callable(target)
-	print(result)
+	# print(result)
 	return result
 
 

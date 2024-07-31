@@ -3,7 +3,9 @@
 Testing of argparse handling in simplifiedapp
 '''
 
+from io import StringIO
 from unittest import TestCase
+from unittest.mock import patch
 
 import io
 import pathlib
@@ -11,7 +13,7 @@ import sys
 import unittest
 import unittest.mock
 
-import simplifiedapp
+from simplifiedapp import main
 
 
 def empty_callable():
@@ -20,26 +22,26 @@ def empty_callable():
 
 class TestMain(TestCase):
 	'''
-	Tests for the main function
+	Tests for the "main" function
 	'''
 	
 	def setUp(self):
-		self.test_object = simplifiedapp.main
+		self.test_object = main
 		self.maxDiff = None
-		sys.path.append(str(pathlib.Path( __file__ ).parent / 'fixtures'))
+		# sys.path.append(str(pathlib.Path( __file__ ).parent / 'fixtures'))
 
-	@unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
-	def _test_run_simple_function(self, mock_stdout):
+	@patch('sys.stdout', new_callable=StringIO)
+	def _test_empty_function(self, mock_stdout):
 		'''
-		Test callable_args with simplest function signature
+		Test "main" with empty function signature
 		'''
 		
 		def fixture_empty_function():
 			pass
 
-		self.assertEqual({}, self.test_object(target=fixture_empty_function))
-		# self.test_object(fixture_empty_function, [])
-		# self.assertEqual('None\n', mock_stdout.getvalue())
+		# self.assertEqual({}, self.test_object(target=fixture_empty_function))
+		self.test_object(fixture_empty_function, [])
+		self.assertEqual('None\n', mock_stdout.getvalue())
 	
 	@unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
 	def _test_run_simple_class(self, mock_stdout):
