@@ -17,6 +17,15 @@ LOGGER = getLogger(__name__)
 
 IS_CALLABLE, IS_CLASS, IS_MODULE = 0, 1, 2
 
+def execute_callable(callable_, kwargs={}):
+	'''Execute a callable
+	"Call" the provided callable with the applicable parameters found in "kwargs". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
+
+	'''
+
+	#Just a placeholder, for now
+	return None
+
 def get_target(target=None):
 	'''Figure out the target and its type
 	Use introspection to find the caller. It wouldn't be the caller to this function but the caller to this function's caller or whatever is passed as parameter. It also figures out if it's a module, a class, or a callable
