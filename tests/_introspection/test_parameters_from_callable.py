@@ -22,10 +22,10 @@ class TestParametersFromCallable(TestCase):
 		'''
 		
 		expected_result = {
-			'args': {'default': (), 'docstring': {'description': 'Any other positional arguments'}, 'positional': True},
+			'args': {'default': [], 'docstring': {'description': 'Any other positional arguments'}, 'positional': True, 'special': 'varargs'},
 			'kw1': {'docstring': {'description': 'First key word test parameter'}, 'positional': False},
 			'kw2': {'default': False, 'docstring': {'description': 'Second key word test parameter', 'is_optional': True, 'type_name': 'bool'}, 'positional': False},
-			'kwargs': {'default': {}, 'docstring': {'description': 'All other keyword arguments'}, 'positional': False},
+			'kwargs': {'default': {}, 'docstring': {'description': 'All other keyword arguments'}, 'positional': False, 'special': 'varkw'},
 			'mult1': {'default': 'mult1', 'docstring': {'description': 'First pos/kw test parameter'}, 'positional': True},
 			'mult2': {'default': 2, 'docstring': {'description': 'Second pos/kw test parameter with default'}, 'positional': True},
 			'pos1': {'docstring': {'description': 'First positional test parameter', 'is_optional': False, 'type_name': 'float'}, 'positional': True},
@@ -39,10 +39,10 @@ class TestParametersFromCallable(TestCase):
 		'''
 		
 		expected_result={
-			'args': {'default': (), 'docstring': {'description': 'Any other positional arguments'}, 'positional': True},
+			'args': {'default': [], 'docstring': {'description': 'Any other positional arguments'}, 'positional': True, 'special': 'varargs'},
 			'kw1': {'docstring': {'description': 'First key word test parameter'}, 'positional': False},
 			'kw2': {'docstring': {'description': 'Second key word test parameter'}, 'positional': False},
-			'kwargs': {'default': {}, 'docstring': {'description': 'All other keyword arguments'}, 'positional': False},
+			'kwargs': {'default': {}, 'docstring': {'description': 'All other keyword arguments'}, 'positional': False, 'special': 'varkw'},
 			'mult1': {'docstring': {'description': 'First pos/kw test parameter'}, 'positional': True},
 			'mult2': {'docstring': {'description': 'Second pos/kw test parameter with default'}, 'positional': True},
 			'pos1': {'docstring': {'description': 'First positional test parameter'}, 'positional': True},
@@ -58,11 +58,11 @@ class TestParametersFromCallable(TestCase):
 		'''
 		
 		expected_result={
-			'args': {'default': (), 'docstring': {'description': 'Any other positional arguments'}, 'positional': True},
+			'args': {'default': [], 'docstring': {'description': 'Any other positional arguments'}, 'positional': True, 'special': 'varargs'},
 			'cls': {'positional': True},
 			'kw1': {'docstring': {'description': 'First key word test parameter'}, 'positional': False},
 			'kw2': {'docstring': {'description': 'Second key word test parameter'}, 'positional': False},
-			'kwargs': {'default': {}, 'docstring': {'description': 'All other keyword arguments'}, 'positional': False},
+			'kwargs': {'default': {}, 'docstring': {'description': 'All other keyword arguments'}, 'positional': False, 'special': 'varkw'},
 			'mult1': {'docstring': {'description': 'First pos/kw test parameter'}, 'positional': True},
 			'mult2': {'docstring': {'description': 'Second pos/kw test parameter with default'}, 'positional': True},
 			'pos1': {'docstring': {'description': 'First positional test parameter'}, 'positional': True},
@@ -77,10 +77,10 @@ class TestParametersFromCallable(TestCase):
 		'''
 		
 		expected_result={
-			'args': {'default': (), 'docstring': {'description': 'Any other positional arguments'}, 'positional': True},
+			'args': {'default': [], 'docstring': {'description': 'Any other positional arguments'}, 'positional': True, 'special': 'varargs'},
 			'kw1': {'docstring': {'description': 'First key word test parameter'}, 'positional': False},
 			'kw2': {'docstring': {'description': 'Second key word test parameter'}, 'positional': False},
-			'kwargs': {'default': {}, 'docstring': {'description': 'All other keyword arguments'}, 'positional': False},
+			'kwargs': {'default': {}, 'docstring': {'description': 'All other keyword arguments'}, 'positional': False, 'special': 'varkw'},
 			'mult1': {'docstring': {'description': 'First pos/kw test parameter'}, 'positional': True},
 			'mult2': {'docstring': {'description': 'Second pos/kw test parameter with default'}, 'positional': True},
 			'pos1': {'docstring': {'description': 'First positional test parameter'}, 'positional': True},

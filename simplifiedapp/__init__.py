@@ -27,11 +27,17 @@ DEFAULT_LOG_PARAMETERS = {
 PPRINT_WIDTH = 270
 OS_FILES = ('.DS_Store')
 
-def dict_type_converter(input_string):
+
+class VarKWParameter(dict):
 	'''
 	'''
-	
-	return input_string
+
+	def __init__(self, input_string, /):
+		'''
+		'''
+
+		key, value = input_string.split('=', maxsplit=1)
+		super().__init__({key : value})
 
 
 class LocalFormatterClass(ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter):
@@ -46,8 +52,8 @@ class IntrospectedArgumentParser(ArgumentParser):
 	'''
 
 	BUILTIN_OPTIONS = {
-		'log-level'		: {'choices' : ['notset', 'debug', 'info', 'warning', 'error', 'critical'], 'default' : 'info', 'help' : 'minimum severity of the messages to be logged'},
-		'log-to-syslog'	: {'action' : 'store_true', 'default' : False, 'help' : 'send logs to syslog.'},
+		'--log-level'		: {'choices' : ['notset', 'debug', 'info', 'warning', 'error', 'critical'], 'default' : 'info', 'help' : 'minimum severity of the messages to be logged'},
+		'--log-to-syslog'	: {'action' : 'store_true', 'default' : False, 'help' : 'send logs to syslog.'},
 		# 'input-file'		: {'action' : InputFiles, 'nargs' : 2, 'default' : argparse.SUPPRESS, 'help' : 'read parameters from a file or standard input (using the "-" special name). Consumes 2 parameters: first one is the path (or "-") and second one is the format'},
 		# 'output-file'		: {'action' : 'store_true', 'default' : False, 'help' : 'output a JSON object as a string'},
 	}
@@ -81,12 +87,16 @@ class IntrospectedArgumentParser(ArgumentParser):
 				result['action'] = 'extend'
 				result['nargs'] = '*'
 				result['default'] = ['='.join((str(key), str(value))) for key, value in details['default'].items()]
-				if 'help' not in result:
-					result['help'] = ''
-				result['help'] += '(Use the key=value format for each entry)'
+				if ('special' in details) and (details['special'] == 'varkw'):
+					result['type'] = VarKWParameter
+					if 'help' not in result:
+						result['help'] = ''
+					result['help'] += '(Use the key=value format for each entry)'
 			else:
 				result['type'] = type(details['default'])
 				result['default'] = details['default']
+			if ('nargs' not in result) and ('positional' in details) and details['positional']:
+				result['nargs'] = '?'
 		elif ('positional' in details) and not details['positional']:
 			result['required'] = True
 			
@@ -105,11 +115,13 @@ class IntrospectedArgumentParser(ArgumentParser):
 				result['help'] = details['docstring']['description']
 
 		if 'version' in details:
-			result.update(details)
-			result['action'] = 'version'
+			result = {
+				'action' : 'version',
+				'version' : details['version'],
+			}
 
 		return result, errors, warnings
-	
+
 	@classmethod
 	def from_callable(cls, callable_, from_class=False, parents=None, initial_values={}):
 		'''Extract argparse info from callable
@@ -133,7 +145,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 		result = cls(**parser_args)
 		parameters = cls.params_from_callable(callable_, callable_metadata=callable_metadata, initial_values=initial_values)
 		for parameter_name, kwargs in parameters.items():
-			result.add_argument('--{}'.format(parameter_name), **kwargs)
+			result.add_argument(parameter_name, **kwargs)
 
 		result.set_defaults(callable=callable_)
 
@@ -151,7 +163,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 		LOGGER.debug('Creating new base parser')
 		result = cls(formatter_class=LocalFormatterClass, add_help=False)
 		for parameter_name, kwargs in cls.BUILTIN_OPTIONS.items():
-			result.add_argument(('-{}' if len(parameter_name) == 1 else '--{}').format(parameter_name), **kwargs)
+			result.add_argument(parameter_name, **kwargs)
 
 		return result
 
@@ -168,7 +180,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 			callable_metadata = {}
 		raw_parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata, from_class=from_class)
 		if 'version' in callable_metadata:
-			raw_parameters['version'] = {'version' : callable_metadata['version']}
+			raw_parameters['version'] = {'version' : callable_metadata['version'], 'positional' : False}
 		parameters = {}
 		for parameter, details in raw_parameters.items():
 			parameter_args, errors, warnings = cls._prepare_callable_parameter(**details)
@@ -180,6 +192,8 @@ class IntrospectedArgumentParser(ArgumentParser):
 				parameter_args['default'] = initial_values[parameter]
 			parameter_name = '_'.join((callable_metadata['name'], parameter))
 			parameter_name = parameter_name.replace('_', '-')
+			if not details['positional']:
+				parameter_name = '--{}'.format(parameter_name)
 			parameters[parameter_name] = parameter_args
 
 		return parameters
@@ -208,6 +222,31 @@ class IntrospectedArgumentParser(ArgumentParser):
 
 		LOGGER.debug('Generated arguments: %s', arguments)
 		return arguments
+
+	@classmethod
+	def run_callable(cls, callable_, args_w_keys={}):
+		'''Extract argparse info from callable
+        Uses introspection to build a dict out of a callable, usable to build an argparse tree.
+
+        ToDo:
+        - Documentation
+        '''
+
+		callable_metadata = object_metadata(callable_)
+		callable_args_w_keys, callable_name = {}, callable_metadata['name']
+		parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata)
+		for key, values in args_w_keys.items():
+			if key[:len(callable_name)] == callable_name:
+				param_name = key[len(callable_name)+1:]
+				if ('special' in parameters[param_name]) and (parameters[param_name]['special'] == 'varkw'):
+					callable_args_w_keys[param_name] = {}
+					for kw_dict in values:
+						callable_args_w_keys[param_name].update(kw_dict)
+				else:
+					callable_args_w_keys[param_name] = values
+
+		result = execute_callable(callable_, args_w_keys=callable_args_w_keys, callable_metadata=callable_metadata, parameters=parameters)
+		return str(result)
 
 
 def main(target = None, sys_argv = None):
@@ -266,9 +305,9 @@ def main(target = None, sys_argv = None):
 		raise RuntimeError('Unknown target type "{}"'.format(target_type))
 
 	args = parser.parse_args(sys_argv)
-	kwargs = vars(args)
-	callable_ = kwargs.pop('callable')
-	result = execute_callable(callable_=callable_, kwargs=kwargs)
+	args_w_keys = {key.replace('-', '_') : value for key, value in vars(args).items()}
+	callable_ = args_w_keys.pop('callable')
+	result = parser.run_callable(callable_=callable_, args_w_keys=args_w_keys)
 
 	if isinstance(result, str):
 		LOGGER.debug('The result is a string. Printing it as is.')

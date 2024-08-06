@@ -78,7 +78,6 @@ class TestIntrospectedArgumentParserPrepareCallableParameter(TestCase):
 		expected_result = ({
 			'action': 'extend',
 			'default': ['a=map', 'test=True'],
-			'help': '(Use the key=value format for each entry)',
 			'nargs': '*'
 		}, [], [])
 		self.assertEqual(expected_result, self.test_object(default={'a' : 'map', 'test' : True}))

@@ -24,6 +24,7 @@ class TestIntrospectedArgumentParserFromCallable(TestCase):
 			pass
 
 		expected_result = IntrospectedArgumentParser(prog='fixture_empty_function', formatter_class=LocalFormatterClass)
+		expected_result.set_defaults(callable=fixture_empty_function)
 		self.assertEqual(expected_result, self.test_object(fixture_empty_function))
 
 	def test_w_versioned_callable(self):
@@ -37,6 +38,7 @@ class TestIntrospectedArgumentParserFromCallable(TestCase):
 
 		expected_result = IntrospectedArgumentParser(prog='fixture_empty_function', formatter_class=LocalFormatterClass)
 		expected_result.add_argument('--fixture-empty-function-version', action='version', version='0.1')
+		expected_result.set_defaults(callable=fixture_empty_function)
 		self.assertEqual(expected_result, self.test_object(fixture_empty_function))
 
 	def _test_init_w_arguments(self):
