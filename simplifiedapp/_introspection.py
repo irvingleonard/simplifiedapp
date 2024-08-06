@@ -7,7 +7,7 @@ ToDo:
 '''
 
 from importlib import import_module
-from inspect import getfullargspec, getmodule, isclass, ismodule, stack
+from inspect import getfullargspec, getmodule, isclass, ismodule, stack as inspect_stack
 from logging import getLogger
 from sys import modules
 
@@ -17,14 +17,42 @@ LOGGER = getLogger(__name__)
 
 IS_CALLABLE, IS_CLASS, IS_MODULE = 0, 1, 2
 
-def execute_callable(callable_, kwargs={}):
+def execute_callable(callable_, args_w_keys={}, callable_metadata=None, parameters=None):
 	'''Execute a callable
 	"Call" the provided callable with the applicable parameters found in "kwargs". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
 
 	'''
 
-	#Just a placeholder, for now
-	return None
+	if callable_metadata is None:
+		callable_metadata = object_metadata(callable_)
+	if parameters is None:
+		parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata)
+	args, kwargs = [], {}
+	for parameter, details in parameters.items():
+		if ('positional' in details) and details['positional']:
+			if ('special' in details) and (details['special'] == 'varargs'):
+				if parameter in args_w_keys:
+					args += args_w_keys[parameter]
+			elif parameter in args_w_keys:
+				args.append(args_w_keys[parameter])
+			elif 'default' in details:
+				args.append(details['default'])
+			else:
+				raise ValueError('Missing value for parameter "{}"'.format(parameter))
+		elif ('special' in details) and (details['special'] == 'varkw'):
+			if parameter in args_w_keys:
+				kwargs |= args_w_keys[parameter]
+		elif parameter in args_w_keys:
+			kwargs[parameter] = args_w_keys[parameter]
+		elif 'default' in details:
+			kwargs[parameter] = details['default']
+		else:
+			raise ValueError('Missing value for parameter "{}"'.format(parameter))
+
+	LOGGER.debug('Running "%s" with: %s & %s', callable_, args, kwargs)
+	result = callable_(*args, **kwargs)
+
+	return result
 
 def get_target(target=None):
 	'''Figure out the target and its type
@@ -34,7 +62,7 @@ def get_target(target=None):
 	:returns tuple: the target and the corresponding IS_CALLABLE, IS_CLASS, or IS_MODULE
 	'''
 
-	caller = stack()
+	caller = inspect_stack()
 	if len(caller) < 2:
 		caller = None
 	else:
@@ -75,6 +103,7 @@ def get_target(target=None):
 		raise ValueError('Target ({}) is not supported: {}'.format(target, error))
 
 	return target, target_type
+
 def object_metadata(obj):
 	'''Gets metadata from an object
 	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring.
@@ -148,10 +177,10 @@ def parameters_from_callable(callable_, callable_metadata=None, from_class=False
 	for i in range(len(defaults)):
 		parameters[args[-len(defaults)+i]] = {'default' : defaults[i], 'positional' : True}
 	if varargs is not None:
-		parameters[varargs] = {'default' : (), 'positional' : True}
+		parameters[varargs] = {'default' : [], 'positional' : True, 'special' : 'varargs'}
 	parameters.update({kwarg : {'default' : kwonlydefaults[kwarg], 'positional' : False} if kwarg in kwonlydefaults else {'positional' : False} for kwarg in kwonlyargs})
 	if varkw is not None:
-		parameters[varkw] = {'default' : {}, 'positional' : False}
+		parameters[varkw] = {'default' : {}, 'positional' : False, 'special' : 'varkw'}
 	
 	for param, annotation in annotations.items():
 		parameters[param]['annotation'] = annotation
