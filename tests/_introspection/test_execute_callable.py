@@ -21,9 +21,9 @@ class TestExecuteCallable(TestCase):
 		expected_result = True
 		self.assertEqual(expected_result, execute_callable(fixture_empty_function))
 
-	def test_complex_callable(self):
+	def test_function_w_all_parameter_combinations(self):
 		'''
-		Test "execute_callable" with a callable that takes every possible parameter
+		Test "execute_callable" with a function that takes every possible parameter
 		'''
 
 		run_input = {
@@ -55,3 +55,4 @@ class TestExecuteCallable(TestCase):
 		
 		expected_result = "b2AllTrue[True, False]{'g': 100, 'a': 0}7('epA', 'epB')therebarcarnageFalse[None, False, '']{'i': 8, 'j': 98}3.14{'to': 'be', 'or not': 'to be'}"
 		self.assertEqual(expected_result, execute_callable(fixture_function_w_all_parameter_combinations, args_w_keys=run_input))
+	
