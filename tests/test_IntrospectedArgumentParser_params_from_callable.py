@@ -6,51 +6,40 @@ Testing of argparse handling in simplifiedapp
 import argparse
 from unittest import TestCase
 
-from fixtures import test_callable_all_parameter_combinations
-from simplifiedapp import IntrospectedArgumentParser, LocalFormatterClass, VarKWParameter, object_metadata
+from fixtures.functions import *
+from simplifiedapp import IntrospectedArgumentParser, VarKWParameter
 
+params_from_callable = IntrospectedArgumentParser.params_from_callable
 class TestIntrospectedArgumentParserParamsFromCallable(TestCase):
 	'''
 	Tests for the IntrospectedArgumentParser.params_from_callable class method
 	'''
 	
 	maxDiff = None
-	
-	def setUp(self):
-		self.test_object = IntrospectedArgumentParser.params_from_callable
-	
+
 	def test_empty_function(self):
 		'''
 		Test IntrospectedArgumentParser.params_from_callable with simplest function signature
 		'''
 
-		def fixture_empty_function():
-			pass
-
 		expected_result = {}
-		self.assertEqual(expected_result, self.test_object(fixture_empty_function))
+		self.assertEqual(expected_result, params_from_callable(fixture_empty_function))
 
 	def test_function_w_positional_args(self):
 		'''
 		Test IntrospectedArgumentParser.params_from_callable with function having positional arguments
 		'''
 
-		def fixture_function_w_positional_args(a, b, /):
-			pass
-
 		expected_result = {
 			'fixture-function-w-positional-args-a' : {},
 			'fixture-function-w-positional-args-b' : {},
 		}
-		self.assertEqual(expected_result, self.test_object(fixture_function_w_positional_args, callable_metadata=object_metadata(fixture_function_w_positional_args)))
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_positional_args))
 	
 	def test_function_w_mixed_args(self):
 		'''
 		Test IntrospectedArgumentParser.params_from_callable with function having mixed arguments
 		'''
-
-		def fixture_function_w_mixed_args(a, b, c, d):
-			pass
 
 		expected_result = {
 			'fixture-function-w-mixed-args-a' : {},
@@ -58,8 +47,18 @@ class TestIntrospectedArgumentParserParamsFromCallable(TestCase):
 			'fixture-function-w-mixed-args-c' : {},
 			'fixture-function-w-mixed-args-d' : {},
 		}
-		self.assertEqual(expected_result, self.test_object(fixture_function_w_mixed_args, callable_metadata=object_metadata(fixture_function_w_mixed_args)))
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_mixed_args))
 	
+	def test_function_w_varargs(self):
+		'''
+		Test IntrospectedArgumentParser.params_from_callable with function having variable positional arguments
+		'''
+
+		expected_result = {
+			'fixture-function-w-varargs-args': {'action': 'extend', 'default': [], 'nargs': '*'},
+		}
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_varargs))
+
 	def test_function_w_keyword_args(self):
 		'''
 		Test IntrospectedArgumentParser.params_from_callable with function having keyword arguments
@@ -72,29 +71,33 @@ class TestIntrospectedArgumentParserParamsFromCallable(TestCase):
 			'--fixture-function-w-keyword-args-c': {'required': True},
 			'--fixture-function-w-keyword-args-d': {'required': True},
 		}
-		self.assertEqual(expected_result, self.test_object(fixture_function_w_keyword_args, callable_metadata=object_metadata(fixture_function_w_keyword_args)))
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_keyword_args))
+		
+	def test_function_w_varkw(self):
+		'''
+		Test IntrospectedArgumentParser.params_from_callable with function having variable keyword arguments
+		'''
+
+		expected_result = {
+			'--fixture-function-w-varkw-kwargs': {'action': 'extend', 'default': [], 'nargs': '*',  'type': VarKWParameter, 'help': '(Use the key=value format for each entry)'},
+		}
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_varkw))
 
 	def test_function_w_default_positional_args(self):
 		'''
 		Test ArgparseParser.params_from_callable with function having positional arguments and default values
 		'''
-		
-		def fixture_function_w_default_positional_args(a, b=2, /):
-			pass
 
 		expected_result = {
 			'fixture-function-w-default-positional-args-a': {},
 			'fixture-function-w-default-positional-args-b': {'default': 2, 'nargs': '?', 'type': int},
 		}
-		self.assertEqual(expected_result, self.test_object(fixture_function_w_default_positional_args, callable_metadata=object_metadata(fixture_function_w_default_positional_args)))
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_default_positional_args))
 
 	def test_function_w_default_mixed_args(self):
 		'''
 		Test IntrospectedArgumentParser.params_from_callable with function having mixed arguments and default values
 		'''
-
-		def fixture_function_w_default_mixed_args(a, b, c=False, d=4):
-			pass
 
 		expected_result = {
 			'fixture-function-w-default-mixed-args-a': {},
@@ -102,70 +105,49 @@ class TestIntrospectedArgumentParserParamsFromCallable(TestCase):
 			'fixture-function-w-default-mixed-args-c': {'action': 'store_true', 'nargs': '?'},
 			'fixture-function-w-default-mixed-args-d': {'default': 4, 'nargs': '?', 'type': int},
 		}
-		self.assertEqual(expected_result, self.test_object(fixture_function_w_default_mixed_args, callable_metadata=object_metadata(fixture_function_w_default_mixed_args)))
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_default_mixed_args))
 
 	def test_function_w_default_keyword_args(self):
 		'''
 		Test IntrospectedArgumentParser.params_from_callable with function having keyword arguments
 		'''
 
-		def fixture_function_w_default_keyword_args(*, c, d=True):
-			pass
-
 		expected_result = {
 			'--fixture-function-w-default-keyword-args-c': {'required': True},
 			'--fixture-function-w-default-keyword-args-d': {'action': 'store_false'},
 		}
-		self.assertEqual(expected_result, self.test_object(fixture_function_w_default_keyword_args, callable_metadata=object_metadata(fixture_function_w_default_keyword_args)))
-
-	def test_function_w_extra_args(self):
-		'''
-		Test IntrospectedArgumentParser.params_from_callable with function having keyword arguments
-		'''
-
-		def fixture_function_w_extra_args(*args):
-			pass
-
-		expected_result = {
-			'fixture-function-w-extra-args-args': {'action': 'extend', 'default': [], 'nargs': '*'},
-		}
-		self.assertEqual(expected_result, self.test_object(fixture_function_w_extra_args, callable_metadata=object_metadata(fixture_function_w_extra_args)))
-
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_default_keyword_args))
 
 	def test_function_w_version(self):
 		'''
 		Test IntrospectedArgumentParser.params_from_callable with function having keyword arguments
 		'''
 
-		def fixture_function_w_version():
-			pass
-		fixture_function_w_version.__version__ = '0.1'
-
 		expected_result = {'--fixture-function-w-version-version': {'action': 'version', 'version': '0.1'}}
-		self.assertEqual(expected_result, self.test_object(fixture_function_w_version, callable_metadata=object_metadata(fixture_function_w_version)))
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_version))
 
 
-	def test_all_parameter_combinations(self):
+	def test_function_w_all_parameter_combinations(self):
 		'''
-		Test IntrospectedArgumentParser.params_from_callable with all possible parameter variations
+		Test IntrospectedArgumentParser.params_from_callable with function having all possible parameter combinations
 		'''
 
 		expected_result = {
-			'--test-callable-all-parameter-combinations-kw-def-bool': {'action': 'store_false'},
-			'--test-callable-all-parameter-combinations-kw-def-dict': {'action': 'extend', 'default': ['1=dfe', 'yufgb=sdqwda'], 'nargs': '*'},
-			'--test-callable-all-parameter-combinations-kw-def-list': {'action': 'extend', 'default': [1, 'tre', 6.7], 'nargs': '*'},
-			'--test-callable-all-parameter-combinations-kw-def-none': {'default': '==SUPPRESS=='},
-			'--test-callable-all-parameter-combinations-kw-def-num': {'default': (8+98j), 'type': complex},
-			'--test-callable-all-parameter-combinations-kw-def-str': {'default': 'another_str'},
-			'--test-callable-all-parameter-combinations-kw-req': {'required': True},
-			'--test-callable-all-parameter-combinations-more-kw': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '*', 'type': VarKWParameter},
-			'test-callable-all-parameter-combinations-more-pos': {'action': 'extend', 'default': [], 'nargs': '*'},
-			'test-callable-all-parameter-combinations-pos-def-bool': {'action': 'store_true', 'nargs': '?'},
-			'test-callable-all-parameter-combinations-pos-def-dict': {'action': 'extend', 'default': ['dct=6', 'fer=False', '1=one'], 'nargs': '*'},
-			'test-callable-all-parameter-combinations-pos-def-list': {'action': 'extend', 'default': ['as', 1, True], 'nargs': '*'},
-			'test-callable-all-parameter-combinations-pos-def-none': {'default': '==SUPPRESS==', 'nargs': '?'},
-			'test-callable-all-parameter-combinations-pos-def-num': {'default': 2.3, 'nargs': '?', 'type': float},
-			'test-callable-all-parameter-combinations-pos-def-str': {'default': 'a_str', 'nargs': '?'},
-			'test-callable-all-parameter-combinations-pos-req': {},
+			'--fixture-function-w-all-parameter-combinations-kw-def-bool': {'action': 'store_false'},
+			'--fixture-function-w-all-parameter-combinations-kw-def-dict': {'action': 'extend', 'default': ['1=dfe', 'yufgb=sdqwda'], 'nargs': '*'},
+			'--fixture-function-w-all-parameter-combinations-kw-def-list': {'action': 'extend', 'default': [1, 'tre', 6.7], 'nargs': '*'},
+			'--fixture-function-w-all-parameter-combinations-kw-def-none': {'default': '==SUPPRESS=='},
+			'--fixture-function-w-all-parameter-combinations-kw-def-num': {'default': (8+98j), 'type': complex},
+			'--fixture-function-w-all-parameter-combinations-kw-def-str': {'default': 'another_str'},
+			'--fixture-function-w-all-parameter-combinations-kw-req': {'required': True},
+			'--fixture-function-w-all-parameter-combinations-more-kw': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '*', 'type': VarKWParameter},
+			'fixture-function-w-all-parameter-combinations-more-pos': {'action': 'extend', 'default': [], 'nargs': '*'},
+			'fixture-function-w-all-parameter-combinations-pos-def-bool': {'action': 'store_true', 'nargs': '?'},
+			'fixture-function-w-all-parameter-combinations-pos-def-dict': {'action': 'extend', 'default': ['dct=6', 'fer=False', '1=one'], 'nargs': '*'},
+			'fixture-function-w-all-parameter-combinations-pos-def-list': {'action': 'extend', 'default': ['as', 1, True], 'nargs': '*'},
+			'fixture-function-w-all-parameter-combinations-pos-def-none': {'default': '==SUPPRESS==', 'nargs': '?'},
+			'fixture-function-w-all-parameter-combinations-pos-def-num': {'default': 2.3, 'nargs': '?', 'type': float},
+			'fixture-function-w-all-parameter-combinations-pos-def-str': {'default': 'a_str', 'nargs': '?'},
+			'fixture-function-w-all-parameter-combinations-pos-req': {},
 		}
-		self.assertEqual(expected_result, self.test_object(test_callable_all_parameter_combinations, callable_metadata=object_metadata(test_callable_all_parameter_combinations)))
+		self.assertEqual(expected_result, params_from_callable(fixture_function_w_all_parameter_combinations))
