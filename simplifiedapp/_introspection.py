@@ -21,7 +21,6 @@ IS_BOUND_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD = 'bound', 'class', 'static'
 def execute_callable(callable_, args_w_keys={}, callable_metadata=None, parameters=None):
 	'''Execute a callable
 	"Call" the provided callable with the applicable parameters found in "kwargs". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
-
 	'''
 
 	if callable_metadata is None:
@@ -207,7 +206,8 @@ def parameters_from_callable(callable_, callable_metadata=None, from_class=False
 	return parameters
 
 def parameters_from_method(method, method_metadata=None):
-	'''
+	'''Method parameters details
+	Uses introspection to extract the parameters required/allowed by method and as much details as possible from them. Also returns the type of method (bound, class, static)
 	'''
 
 	parameters = parameters_from_callable(method, callable_metadata=method_metadata, from_class=True)
@@ -223,5 +223,3 @@ def parameters_from_method(method, method_metadata=None):
 			method_type = IS_STATIC_METHOD
 
 	return parameters, method_type
-
-
