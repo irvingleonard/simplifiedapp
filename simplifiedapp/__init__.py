@@ -168,7 +168,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 		return result
 
 	@classmethod
-	def params_from_callable(cls, callable_, callable_metadata=None, from_class=False, initial_values={}):
+	def params_from_callable(cls, callable_, from_class=False, initial_values={}, callable_metadata=None):
 		'''Extract argparse info from callable
 		Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 		
@@ -177,7 +177,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 		'''
 
 		if callable_metadata is None:
-			callable_metadata = {}
+			callable_metadata = object_metadata(callable_)
 		raw_parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata, from_class=from_class)
 		if 'version' in callable_metadata:
 			raw_parameters['version'] = {'version' : callable_metadata['version'], 'positional' : False}
