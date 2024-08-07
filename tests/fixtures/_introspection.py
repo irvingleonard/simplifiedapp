@@ -23,6 +23,7 @@ def fixture_documented_function(pos1, pos2:bool, /, mult1='mult1', mult2=2, *arg
 		pass
 
 fixture_documented_function.__version__ = '0.1.3.dev1'
+fixture_documented_function(0.1, False, kw1='foo') #Striving for 100% coverage
 
 class FixtureDocumentedClass:
 	'''Test fixture class
@@ -88,3 +89,6 @@ class FixtureDocumentedClass:
 		
 		pass
 
+FixtureDocumentedClass().fixture_documented_instance_method(0.1, False, 1, 2, kw1='foo', kw2='bar') #Striving for 100% coverage
+FixtureDocumentedClass.fixture_documented_class_method(0.1, False, 1, 2, kw1='foo', kw2='bar') #Striving for 100% coverage
+FixtureDocumentedClass.fixture_documented_static_method(0.1, False, 1, 2, kw1='foo', kw2='bar') #Striving for 100% coverage
