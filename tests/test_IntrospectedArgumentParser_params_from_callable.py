@@ -64,9 +64,6 @@ class TestIntrospectedArgumentParserParamsFromCallable(TestCase):
 		Test IntrospectedArgumentParser.params_from_callable with function having keyword arguments
 		'''
 
-		def fixture_function_w_keyword_args(*, c, d):
-			pass
-
 		expected_result = {
 			'--fixture-function-w-keyword-args-c': {'required': True},
 			'--fixture-function-w-keyword-args-d': {'required': True},
