@@ -6,17 +6,13 @@ Testing the introspection.param_metadata function
 from importlib import import_module
 from unittest import TestCase
 
+from fixtures import _introspection as fixtures_introspection
 from simplifiedapp._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, get_target
-
-from fixtures import _introspection as introspection_fixture
 
 class TestGetTarget(TestCase):
 	'''
 	Tests for the get_target function
 	'''
-	
-	def setUp(self):
-		self.test_object = get_target
 	
 	def test_callable_target(self):
 		'''
@@ -27,7 +23,7 @@ class TestGetTarget(TestCase):
 			pass
 
 		expected_result = (fixture_empty_callable, IS_CALLABLE)
-		self.assertEqual(expected_result, self.test_object(target=fixture_empty_callable))
+		self.assertEqual(expected_result, get_target(target=fixture_empty_callable))
 
 	def test_class_target(self):
 		'''
@@ -38,24 +34,24 @@ class TestGetTarget(TestCase):
 			pass
 
 		expected_result = (FixtureEmptyClass, IS_CLASS)
-		self.assertEqual(expected_result, self.test_object(target=FixtureEmptyClass))
+		self.assertEqual(expected_result, get_target(target=FixtureEmptyClass))
 
 	def test_module_target(self):
 		'''
 		Test "get_target" with a module provided as target
 		'''
 
-		expected_result = (introspection_fixture, IS_MODULE)
-		self.assertEqual(expected_result, self.test_object(target=introspection_fixture))
+		expected_result = (fixtures_introspection, IS_MODULE)
+		self.assertEqual(expected_result, get_target(target=fixtures_introspection))
 
 	def test_module_autodetection(self):
 		'''
-		Test "get_target" without a target to trigger module detection
+		Test "get_target" without a target (to trigger module detection)
 		'''
 
 		import unittest.case
 		expected_result = (unittest.case, IS_MODULE)
-		self.assertEqual(expected_result, self.test_object())
+		self.assertEqual(expected_result, get_target())
 
 	def test_module_as_string(self):
 		'''
@@ -64,7 +60,7 @@ class TestGetTarget(TestCase):
 
 		import fixtures.fixture_empty_module
 		expected_result = (fixtures.fixture_empty_module, IS_MODULE)
-		self.assertEqual(expected_result, self.test_object('fixtures.fixture_empty_module'))
+		self.assertEqual(expected_result, get_target('fixtures.fixture_empty_module'))
 
 	def test_module_callable_as_string(self):
 		'''
@@ -73,14 +69,14 @@ class TestGetTarget(TestCase):
 
 		from unittest.case import addModuleCleanup
 		expected_result = (addModuleCleanup, IS_CALLABLE)
-		self.assertEqual(expected_result, self.test_object('addModuleCleanup'))
+		self.assertEqual(expected_result, get_target('addModuleCleanup'))
 
 	def test_module_importable_as_string(self):
 		'''
 		Test "get_target" with an importable module name as a string
 		'''
 
-		test_result = self.test_object('fixtures.fixture_versioned_module')
+		test_result = get_target('fixtures.fixture_versioned_module')
 		expected_result = (import_module('fixtures.fixture_versioned_module'), IS_MODULE)
 		self.assertEqual(expected_result, test_result)
 
@@ -89,4 +85,4 @@ class TestGetTarget(TestCase):
 		Test "get_target" with a non-importable module name as a string
 		'''
 
-		self.assertRaises(ValueError, self.test_object, 'fixtures.fixture_invalid_module_dir')
+		self.assertRaises(ValueError, get_target, 'fixtures.fixture_invalid_module_dir')

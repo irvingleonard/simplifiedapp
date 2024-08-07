@@ -5,6 +5,7 @@ Testing the introspection.param_metadata function
 
 from unittest import TestCase
 
+from fixtures.functions import *
 from simplifiedapp._introspection import execute_callable
 
 class TestExecuteCallable(TestCase):
@@ -12,44 +13,45 @@ class TestExecuteCallable(TestCase):
 	Tests for the execute_callable function
 	'''
 	
-	def setUp(self):
-		self.test_object = execute_callable
-	
-	def test_empty_callable(self):
+	def test_empty_function(self):
 		'''
-		Test "execute_callable" with a callable that doesn't have parameters
+		Test "execute_callable" with a function that doesn't have parameters
 		'''
-
-		def fixture_empty_callable():
-			return True
 
 		expected_result = True
-		self.assertEqual(expected_result, self.test_object(fixture_empty_callable))
+		self.assertEqual(expected_result, execute_callable(fixture_empty_function))
 
 	def test_complex_callable(self):
 		'''
 		Test "execute_callable" with a callable that takes every possible parameter
 		'''
 
-		def fixture_complex_callable(pos, pos_def=1, /, mix=None, *args, kw_req, kw_opt='foo', **kwargs):
-			return str(pos) + str(pos_def) + str(mix) + ''.join(args) + str(kw_req) + str(kw_opt) + str(kwargs)
-
 		run_input = {
-			'pos' : 'a',
-			'args' : ['ep1', 'ep2'],
+			'pos_req' : 'a',
+			'more_pos' : ['ep1', 'ep2'],
 			'kw_req' : 'here',
 		}
-		expected_result = 'a1Noneep1ep2herefoo{}'
-		self.assertEqual(expected_result, self.test_object(fixture_complex_callable, args_w_keys=run_input))
+		expected_result = "aNonea_strFalse['as', 1, True]{'dct': 6, 'fer': False, 1: 'one'}2.3('ep1', 'ep2')hereNoneanother_strTrue[1, 'tre', 6.7]{1: 'dfe', 'yufgb': 'sdqwda'}(8+98j){}"
+		self.assertEqual(expected_result, execute_callable(fixture_function_w_all_parameter_combinations, args_w_keys=run_input))
 
 		run_input = {
-			'pos': 'b',
-			'pos_def': 2,
-			'mix': 'All',
-			'args': ['epA', 'epB'],
+			'pos_req': 'b',
+			'pos_def_none': 2,
+			'pos_def_str': 'All',
+			'pos_def_bool': True,
+			'pos_def_list': [True, False],
+			'pos_def_dict': {'g' : 100, 'a' : 0},
+			'pos_def_num': 7,
+			'more_pos': ['epA', 'epB'],
 			'kw_req': 'there',
-			'kw_opt': 'bar',
-			'kwargs': {'to' : 'be', 'or not' : 'to be'},
+			'kw_def_none': 'bar',
+			'kw_def_str': 'carnage',
+			'kw_def_bool': 'False',
+			'kw_def_list': [None, False, ''],
+			'kw_def_dict': {'i' : 8, 'j' : 98},
+			'kw_def_num': 3.14,
+			'more_kw': {'to' : 'be', 'or not' : 'to be'},
 		}
-		expected_result = "b2AllepAepBtherebar{'to': 'be', 'or not': 'to be'}"
-		self.assertEqual(expected_result, self.test_object(fixture_complex_callable, args_w_keys=run_input))
+		
+		expected_result = "b2AllTrue[True, False]{'g': 100, 'a': 0}7('epA', 'epB')therebarcarnageFalse[None, False, '']{'i': 8, 'j': 98}3.14{'to': 'be', 'or not': 'to be'}"
+		self.assertEqual(expected_result, execute_callable(fixture_function_w_all_parameter_combinations, args_w_keys=run_input))

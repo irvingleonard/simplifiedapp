@@ -5,9 +5,8 @@ Testing the _introspection.parameters_from_callable function
 
 from unittest import TestCase
 
-from simplifiedapp._introspection import object_metadata, parameters_from_callable
-
-from fixtures import _introspection as introspection_fixture
+from fixtures._introspection import *
+from simplifiedapp._introspection import parameters_from_callable
 
 class TestParametersFromCallable(TestCase):
 	'''
@@ -18,7 +17,7 @@ class TestParametersFromCallable(TestCase):
 	
 	def test_simple_callable(self):
 		'''
-		Testing with a simple callable
+		Testing "parameters_from_callable" with a simple callable
 		'''
 		
 		expected_result = {
@@ -31,11 +30,11 @@ class TestParametersFromCallable(TestCase):
 			'pos1': {'docstring': {'description': 'First positional test parameter', 'is_optional': False, 'type_name': 'float'}, 'positional': True},
 			'pos2': {'annotation': bool, 'docstring': {'description': 'Second positional test parameter'}, 'positional': True},
 		}
-		self.assertDictEqual(expected_result, parameters_from_callable(introspection_fixture.test_callable, object_metadata(introspection_fixture.test_callable)))
+		self.assertDictEqual(expected_result, parameters_from_callable(fixture_documented_function))
 
 	def test_instance_method(self):
 		'''
-		Testing with a instance method
+		Testing "parameters_from_callable" with a instance method
 		'''
 		
 		expected_result={
@@ -49,12 +48,11 @@ class TestParametersFromCallable(TestCase):
 			'pos2': {'docstring': {'description': 'Second positional test parameter'}, 'positional': True},
 			'self': {'positional': True},
 		}
-		test_object = introspection_fixture.TestClass().test_instance_method
-		self.assertDictEqual(expected_result, parameters_from_callable(test_object, object_metadata(test_object)))
+		self.assertDictEqual(expected_result, parameters_from_callable(FixtureDocumentedClass().fixture_documented_instance_method))
 		
 	def test_class_method(self):
 		'''
-		Testing with a class method
+		Testing "parameters_from_callable" with a class method
 		'''
 		
 		expected_result={
@@ -68,12 +66,11 @@ class TestParametersFromCallable(TestCase):
 			'pos1': {'docstring': {'description': 'First positional test parameter'}, 'positional': True},
 			'pos2': {'docstring': {'description': 'Second positional test parameter'}, 'positional': True}
 		}
-		test_object = introspection_fixture.TestClass.test_class_method
-		self.assertDictEqual(expected_result, parameters_from_callable(test_object, object_metadata(test_object)))
+		self.assertDictEqual(expected_result, parameters_from_callable(FixtureDocumentedClass.fixture_documented_class_method))
 		
 	def test_static_method(self):
 		'''
-		Testing with a static method
+		Testing "parameters_from_callable" with a static method
 		'''
 		
 		expected_result={
@@ -86,6 +83,4 @@ class TestParametersFromCallable(TestCase):
 			'pos1': {'docstring': {'description': 'First positional test parameter'}, 'positional': True},
 			'pos2': {'docstring': {'description': 'Second positional test parameter'}, 'positional': True},
 		}
-		test_object = introspection_fixture.TestClass.test_static_method
-		self.assertDictEqual(expected_result, parameters_from_callable(test_object, object_metadata(test_object)))
-
+		self.assertDictEqual(expected_result, parameters_from_callable(FixtureDocumentedClass.fixture_documented_static_method))

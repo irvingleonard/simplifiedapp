@@ -5,7 +5,7 @@ Simple fixture module for object_metadata.
 
 __version__ = '2.1.3.post3'
 
-def test_callable(pos1, pos2:bool, /, mult1='mult1', mult2=2, *args, kw1, kw2=False, **kwargs):
+def fixture_documented_function(pos1, pos2:bool, /, mult1='mult1', mult2=2, *args, kw1, kw2=False, **kwargs):
 		'''Test fixture callable
 		A callable test fixture for the object_metadata function.
 		
@@ -22,10 +22,9 @@ def test_callable(pos1, pos2:bool, /, mult1='mult1', mult2=2, *args, kw1, kw2=Fa
 		
 		pass
 
-test_callable.__version__ = '0.1.3.dev1'
+fixture_documented_function.__version__ = '0.1.3.dev1'
 
-
-class TestClass:
+class FixtureDocumentedClass:
 	'''Test fixture class
 	A class test fixture for the object_metadata function.
 	
@@ -36,7 +35,7 @@ class TestClass:
 	
 	__version__ = '2.4.5'
 	
-	def test_instance_method(self, pos1, pos2, /, mult1, mult2, *args, kw1, kw2, **kwargs):
+	def fixture_documented_instance_method(self, pos1, pos2, /, mult1, mult2, *args, kw1, kw2, **kwargs):
 		'''Test fixture callable
 		A callable test fixture for the object_metadata function.
 		
@@ -54,7 +53,7 @@ class TestClass:
 		pass
 	
 	@classmethod
-	def test_class_method(cls, pos1, pos2, /, mult1, mult2, *args, kw1, kw2, **kwargs):
+	def fixture_documented_class_method(cls, pos1, pos2, /, mult1, mult2, *args, kw1, kw2, **kwargs):
 		'''Test fixture callable
 		A callable test fixture for the object_metadata function.
 		
@@ -72,7 +71,7 @@ class TestClass:
 		pass
 	
 	@staticmethod	
-	def test_static_method(pos1, pos2, /, mult1, mult2, *args, kw1, kw2, **kwargs):
+	def fixture_documented_static_method(pos1, pos2, /, mult1, mult2, *args, kw1, kw2, **kwargs):
 		'''Test fixture callable
 		A callable test fixture for the object_metadata function.
 		

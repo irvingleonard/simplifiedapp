@@ -5,57 +5,35 @@ Testing the _introspection.object_metadata function
 
 from unittest import TestCase
 
+from fixtures import _introspection as fixtures_introspection
 from simplifiedapp._introspection import object_metadata
-
-from fixtures import _introspection as introspection_fixture
 
 VERSION_REGEXP = r'\d+\.\d+\.\d+(?:\.(dev|post)\d+)?'
 
-class TestObjectMetadataCallable(TestCase):
+class TestObjectMetadata(TestCase):
 	'''
-	Tests callable for the object_metadata function
+	Tests for the object_metadata function
 	'''
 	
 	maxDiff = None
 	
-	def setUp(self):
-		self.metadata = object_metadata(introspection_fixture.test_callable)
-	
-	def test_name(self):
+	def test_documented_function(self):
 		'''
-		Testing the correct detection of name
+		Testing "object_metadata" with a documented function
 		'''
 		
-		expected_value = 'test_callable'
-		self.assertEqual(expected_value, self.metadata['name'])
-	
-	def test_version(self):
-		'''
-		Testing the detection of the version number and its format
-		'''
+		metadata = object_metadata(fixtures_introspection.fixture_documented_function)
 		
-		self.assertRegex(self.metadata['version'], '(?i:{})'.format(VERSION_REGEXP))
+		expected_value = 'fixture_documented_function'
+		self.assertEqual(expected_value, metadata['name'])
 		
-	def test_description(self):
-		'''
-		Testing the detection of description
-		'''
+		self.assertRegex(metadata['version'], '(?i:{})'.format(VERSION_REGEXP))
 		
 		expected_value = 'Test fixture callable'
-		self.assertEqual(expected_value, self.metadata['description'])
-		
-	def test_long_description(self):
-		'''
-		Testing the detection of long description
-		'''
+		self.assertEqual(expected_value, metadata['description'])
 		
 		expected_value = 'A callable test fixture for the object_metadata function.'
-		self.assertEqual(expected_value, self.metadata['long_description'])
-		
-	def test_parameters(self):
-		'''
-		Testing the detection of parameters from docstring
-		'''
+		self.assertEqual(expected_value, metadata['long_description'])
 		
 		expected_value = {
 			'args': {'description': 'Any other positional arguments'},
@@ -67,120 +45,61 @@ class TestObjectMetadataCallable(TestCase):
 			'pos1': {'description': 'First positional test parameter', 'is_optional': False, 'type_name': 'float'},
 			'pos2': {'description': 'Second positional test parameter'},
 		}
-		self.assertDictEqual(expected_value, self.metadata['parameters'])
-		
-	def test_returns(self):
-		'''
-		Testing the detection of return value from docstring
-		'''
+		self.assertDictEqual(expected_value, metadata['parameters'])
 		
 		expected_value = {
 			'description': 'nothing useful, really',
 			'is_generator': False,
 			'type_name': 'None'
 		}
-		self.assertDictEqual(expected_value, self.metadata['returns'])
-
-
-class TestObjectMetadataClass(TestCase):
-	'''
-	Tests callable for the object_metadata function
-	'''
+		self.assertDictEqual(expected_value, metadata['returns'])
 	
-	def setUp(self):
-		self.metadata = object_metadata(introspection_fixture.TestClass)
-	
-	def test_name(self):
+	def test_documented_class(self):
 		'''
-		Testing the correct detection of name
+		Testing "object_metadata" with a documented class
 		'''
 		
-		expected_value = 'TestClass'
-		self.assertEqual(expected_value, self.metadata['name'])
-	
-	def test_version(self):
-		'''
-		Testing the detection of the version number and its format
-		'''
+		metadata = object_metadata(fixtures_introspection.FixtureDocumentedClass)
 		
-		self.assertRegex(self.metadata['version'], '(?i:{})'.format(VERSION_REGEXP))
+		expected_value = 'FixtureDocumentedClass'
+		self.assertEqual(expected_value, metadata['name'])
 		
-	def test_description(self):
-		'''
-		Testing the detection of description
-		'''
+		self.assertRegex(metadata['version'], '(?i:{})'.format(VERSION_REGEXP))
 		
 		expected_value = 'Test fixture class'
-		self.assertEqual(expected_value, self.metadata['description'])
-		
-	def test_long_description(self):
-		'''
-		Testing the detection of long description
-		'''
+		self.assertEqual(expected_value, metadata['description'])
 		
 		expected_value = 'A class test fixture for the object_metadata function.'
-		self.assertEqual(expected_value, self.metadata['long_description'])
-		
-	def test_parameters(self):
-		'''
-		Testing the detection of parameters from docstring
-		'''
+		self.assertEqual(expected_value, metadata['long_description'])
 		
 		expected_value = {
 			'param1': {'description': 'First positional test parameter'},
 			'param2': {'description': 'Second positional test parameter'},
 		}
-		self.assertDictEqual(expected_value, self.metadata['parameters'])
-		
-	def test_returns(self):
-		'''
-		Testing the detection of return value from docstring
-		'''
+		self.assertDictEqual(expected_value, metadata['parameters'])
 		
 		expected_value = {
 			'description': 'an initialized instance',
 			'is_generator': False,
 			'type_name': 'TestClass'
 		}
-		self.assertDictEqual(expected_value, self.metadata['returns'])
-
-
-class TestObjectMetadataModule(TestCase):
-	'''
-	Tests module for the object_metadata function
-	'''
+		self.assertDictEqual(expected_value, metadata['returns'])
 	
-	def setUp(self):
-		self.metadata = object_metadata(introspection_fixture)
+	def test_documented_module(self):
+		'''
+		Testing "object_metadata" with a documented module
+		'''
+
+		metadata = object_metadata(fixtures_introspection)
 	
-	def test_name(self):
-		'''
-		Testing the correct detection of name
-		'''
-		
 		expected_value = 'fixtures._introspection'
-		self.assertEqual(expected_value, self.metadata['name'])
+		self.assertEqual(expected_value, metadata['name'])
 	
-	def test_version(self):
-		'''
-		Testing the detection of the version number and its format
-		'''
-		
-		self.assertRegex(self.metadata['version'], '(?i:{})'.format(VERSION_REGEXP))
-		
-	def test_description(self):
-		'''
-		Testing the detection of description
-		'''
+		self.assertRegex(metadata['version'], '(?i:{})'.format(VERSION_REGEXP))
 		
 		expected_value = 'Test fixture module'
-		self.assertEqual(expected_value, self.metadata['description'])
-		
-	def test_long_description(self):
-		'''
-		Testing the detection of long description
-		'''
+		self.assertEqual(expected_value, metadata['description'])
 		
 		expected_value = 'Simple fixture module for object_metadata.'
-		self.assertEqual(expected_value, self.metadata['long_description'])
+		self.assertEqual(expected_value, metadata['long_description'])
 		
