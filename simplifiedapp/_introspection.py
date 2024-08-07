@@ -16,6 +16,7 @@ from docstring_parser import parse as docstring_parse
 LOGGER = getLogger(__name__)
 
 IS_CALLABLE, IS_CLASS, IS_MODULE = 0, 1, 2
+IS_BOUND_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD = 'bound', 'class', 'static'
 
 def execute_callable(callable_, args_w_keys={}, callable_metadata=None, parameters=None):
 	'''Execute a callable
@@ -104,6 +105,14 @@ def get_target(target=None):
 
 	return target, target_type
 
+def instantiate_class(class_):
+	'''
+	'''
+
+	varargs_present, varkw_present = False, False
+	parameters_new, new_is_static = parameters_from_method(class_.__new__)
+	return parameters_new
+
 def object_metadata(obj):
 	'''Gets metadata from an object
 	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring.
@@ -162,8 +171,9 @@ def parameters_from_callable(callable_, callable_metadata=None, from_class=False
 		if from_class:
 			args = ['self']	# Default will be bound method
 	
-	if from_class and (callable_ is object.__init__):
+	if callable_ in [object.__init__, object.__new__]:
 		#Builtin object.__init__ case, where *args and **kwargs are accepted but only through super()
+		#Builtin object.__new__ simply forwards whatever is passed as *args and **kwargs to __init__. You should get the list of parameters from that one instead.
 		varargs, varkw = None, None
 	
 	LOGGER.debug('Callable "%s" yield signature: %s' % (callable_, dict(zip(('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations'),(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations)))))
@@ -184,8 +194,10 @@ def parameters_from_callable(callable_, callable_metadata=None, from_class=False
 	
 	for param, annotation in annotations.items():
 		parameters[param]['annotation'] = annotation
-		
-	if (callable_metadata is not None) and ('parameters' in callable_metadata):
+
+	if callable_metadata is None:
+		callable_metadata = object_metadata(callable_)
+	if 'parameters' in callable_metadata:
 		for param, docstring in callable_metadata['parameters'].items():
 			if param not in parameters:
 				LOGGER.warning('Docstring references a missing parameter: %s', param)
@@ -193,3 +205,23 @@ def parameters_from_callable(callable_, callable_metadata=None, from_class=False
 				parameters[param]['docstring'] = docstring
 			
 	return parameters
+
+def parameters_from_method(method, method_metadata=None):
+	'''
+	'''
+
+	parameters = parameters_from_callable(method, callable_metadata=method_metadata, from_class=True)
+	if len(parameters):
+		first_param = tuple(parameters.keys())[0]
+		if first_param == 'self':
+			del parameters[first_param]
+			method_type = IS_BOUND_METHOD
+		elif first_param in ['cls', 'type']:
+			del parameters[first_param]
+			method_type = IS_CLASS_METHOD
+		else:
+			method_type = IS_STATIC_METHOD
+
+	return parameters, method_type
+
+
