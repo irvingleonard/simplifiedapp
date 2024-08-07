@@ -15,43 +15,45 @@ from docstring_parser import parse as docstring_parse
 
 LOGGER = getLogger(__name__)
 
-IS_CALLABLE, IS_CLASS, IS_MODULE = 0, 1, 2
-IS_BOUND_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD = 'bound', 'class', 'static'
+IS_CALLABLE, IS_CLASS, IS_MODULE = 'callable', 'class', 'module'
+IS_BOUND_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD = 'bound_method', 'class_method', 'static_method'
 
 def execute_callable(callable_, args_w_keys={}, callable_metadata=None, parameters=None):
 	'''Execute a callable
 	"Call" the provided callable with the applicable parameters found in "kwargs". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
 	'''
-
+	
+	if not callable(callable_):
+		raise ValueError('The argument provided "{}" is not actually a callable'.format(callable_.__qualname__))
 	if callable_metadata is None:
 		callable_metadata = object_metadata(callable_)
-	if parameters is None:
-		parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata)
-	args, kwargs = [], {}
-	for parameter, details in parameters.items():
-		if ('positional' in details) and details['positional']:
-			if ('special' in details) and (details['special'] == 'varargs'):
-				if parameter in args_w_keys:
-					args += args_w_keys[parameter]
-			elif parameter in args_w_keys:
-				args.append(args_w_keys[parameter])
-			elif 'default' in details:
-				args.append(details['default'])
-			else:
-				raise ValueError('Missing value for parameter "{}"'.format(parameter))
-		elif ('special' in details) and (details['special'] == 'varkw'):
-			if parameter in args_w_keys:
-				kwargs |= args_w_keys[parameter]
-		elif parameter in args_w_keys:
-			kwargs[parameter] = args_w_keys[parameter]
-		elif 'default' in details:
-			kwargs[parameter] = details['default']
+	
+	genealogy = callable_.__qualname__.split('.')
+	
+	if isclass(callable_):
+		LOGGER.debug('Instantiating class "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
+		result = instantiate_class(class_=callable_, args_w_keys=args_w_keys)
+	elif len(genealogy) == 1:
+		if parameters is None:
+			parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata)
+		args, kwargs = prepare_arguments(parameters=parameters, args_w_keys=args_w_keys)
+		LOGGER.debug('Running function "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
+		result = callable_(*args, **kwargs)
+	else:
+		parameters, method_type = parameters_from_method(method=callable_, method_metadata=callable_metadata)
+		args, kwargs = prepare_arguments(parameters=parameters, args_w_keys=args_w_keys)
+		if method_type == IS_BOUND_METHOD:
+			module = import_module(callable_.__module__)
+			parents = [getattr(module, genealogy[0])]
+			for parent in genealogy[1:-1]:
+				parents.append(getattr(parents[-1], parent))
+			parent_instance = instantiate_class(class_=parents[-1], args_w_keys=args_w_keys)
+			LOGGER.debug('Running bound method "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
+			result = getattr(parent_instance, callable_metadata['name'])(*args, **kwargs)
 		else:
-			raise ValueError('Missing value for parameter "{}"'.format(parameter))
-
-	LOGGER.debug('Running "%s" with: %s & %s', callable_, args, kwargs)
-	result = callable_(*args, **kwargs)
-
+			LOGGER.debug('Running unbound method "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
+			result = callable_(*args, **kwargs)
+	
 	return result
 
 def get_target(target=None):
@@ -104,13 +106,16 @@ def get_target(target=None):
 
 	return target, target_type
 
-def instantiate_class(class_):
-	'''
+def instantiate_class(class_, args_w_keys={}):
+	'''Instantiate a class
+	This code works under the assumption that a class implementing __new__ and __init__ will HAVE to declare "varargs" and "varkw" parameters in both methods, which would take into account that
 	'''
 
-	varargs_present, varkw_present = False, False
 	parameters_new, new_is_static = parameters_from_method(class_.__new__)
-	return parameters_new
+	new_args, new_kwargs = prepare_arguments(parameters=parameters_new, args_w_keys=args_w_keys)
+	parameters_init, init_is_bound = parameters_from_method(class_.__init__)
+	init_args, init_kwargs = prepare_arguments(parameters=parameters_init, args_w_keys=args_w_keys)
+	return class_(*(new_args + init_args), **(new_kwargs | init_kwargs))
 
 def object_metadata(obj):
 	'''Gets metadata from an object
@@ -223,3 +228,36 @@ def parameters_from_method(method, method_metadata=None):
 			method_type = IS_STATIC_METHOD
 
 	return parameters, method_type
+
+def prepare_arguments(parameters, args_w_keys={}):
+	'''Prepare arguments for callable
+	Create the list of "args" and the mapping of "kwargs" to be used with a callable.
+
+	:param dict parameters: A mapping of parameters and details, as returned from "parameters_from_callable"
+	:param dict args_w_keys: A mapping of parameters and values to be added to args and kwargs
+	:returns tuple: positional arguments "args" and keyword arguments "kwargs"
+	'''
+	
+	args, kwargs = [], {}
+	for parameter, details in parameters.items():
+		if ('positional' in details) and details['positional']:
+			if ('special' in details) and (details['special'] == 'varargs'):
+				if parameter in args_w_keys:
+					args += args_w_keys[parameter]
+			elif parameter in args_w_keys:
+				args.append(args_w_keys[parameter])
+			elif 'default' in details:
+				args.append(details['default'])
+			else:
+				raise ValueError('Missing value for parameter "{}"'.format(parameter))
+		elif ('special' in details) and (details['special'] == 'varkw'):
+			if parameter in args_w_keys:
+				kwargs |= args_w_keys[parameter]
+		elif parameter in args_w_keys:
+			kwargs[parameter] = args_w_keys[parameter]
+		elif 'default' in details:
+			kwargs[parameter] = details['default']
+		else:
+			raise ValueError('Missing value for parameter "{}"'.format(parameter))
+
+	return args, kwargs
