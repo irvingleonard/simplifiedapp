@@ -58,6 +58,5 @@ class TestInstantiateClass(TestCase):
 			'init_pos'	: '2',
 			'init_kw'	: 'l',
 		}
-
 		expected_result = FixtureClassWNewAndInit(args_w_keys['new_pos'], args_w_keys['init_pos'], new_kw=args_w_keys['new_kw'], init_kw=args_w_keys['init_kw'])
 		self.assertEqual(expected_result, instantiate_class(FixtureClassWNewAndInit, args_w_keys=args_w_keys))
