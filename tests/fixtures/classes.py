@@ -67,7 +67,40 @@ class FixtureClassWNewAndInit(FancyStuff):
 		self.init_kw = init_kw
 
 
+class FixtureClassWMethods(FancyStuff):
+	'''
+	'''
+	
+	class_const = 'ultra'
+	def __init__(self, init_arg):
+		self.init_arg = init_arg
+	
+	def bound_method(self, pos_arg, /):
+		'''
+		'''
+		
+		return '-'.join(map(str, (self.class_const, self.init_arg, 'bound', pos_arg)))
+
+	@classmethod
+	def class_method(cls, pos_arg, /):
+		'''
+		'''
+		
+		return '-'.join(map(str, (cls.class_const, 'class', pos_arg)))
+	
+	@staticmethod
+	def static_method(pos_arg, /):
+		'''
+		'''
+		
+		return 'static-' + str(pos_arg)
+
+
 class FixtureDeepClassL1:
 	class FixtureDeepClassL2:
-		class FixtureDeepClassL3:
-			pass
+		class FixtureDeepClassL3(FancyStuff):
+			
+			def __init__(self, init_arg):
+				self.init_arg = init_arg
+			def deep_method(self, pos_arg, /, kw_arg):
+				return '-'.join(map(str, (self.init_arg, pos_arg, kw_arg)))
