@@ -24,14 +24,14 @@ def execute_callable(callable_, args_w_keys={}, callable_metadata=None, paramete
 	'''
 	
 	if not callable(callable_):
-		raise ValueError('The argument provided "{}" is not actually a callable'.format(callable_.__qualname__))
+		raise ValueError('The argument provided "{}" is not actually a callable'.format(callable_))
 	if callable_metadata is None:
 		callable_metadata = object_metadata(callable_)
 	
 	genealogy = callable_.__qualname__.split('.')
 	
 	if isclass(callable_):
-		LOGGER.debug('Instantiating class "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
+		LOGGER.debug('Instantiating class "%s" with: %s', callable_.__qualname__, args_w_keys)
 		result = instantiate_class(class_=callable_, args_w_keys=args_w_keys)
 	elif len(genealogy) == 1:
 		if parameters is None:
