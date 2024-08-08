@@ -198,31 +198,6 @@ class IntrospectedArgumentParser(ArgumentParser):
 
 		return parameters
 
-
-		if from_class:
-			is_boundmethod = False
-			if len(args):
-				if args[0] == 'self':
-					is_boundmethod = True
-					args.pop(0)
-				elif args[0] in ['cls', 'type']:
-					args.pop(0)
-
-		metadata = object_metadata(callable_)
-
-		arguments = {arg : param_metadata(arg, arg_values, annotations, docstring = '') for arg, arg_values in req_args.items()}
-		arguments.update({('-{}' if len(arg) == 1 else '--{}').format(arg) : param_metadata(arg, arg_values, annotations, docstring = '') for arg, arg_values in opt_args.items()})
-
-		arguments[False] = {'__simplifiedapp_' : (callable_, tuple(args), varargs, tuple(kwonlyargs), varkw)}
-		if from_class:
-			if is_boundmethod:
-				arguments[False] = {'__simplifiedapp_' : (metadata['name'], tuple(args), varargs, tuple(kwonlyargs), varkw)}
-
-		arguments[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}
-
-		LOGGER.debug('Generated arguments: %s', arguments)
-		return arguments
-
 	@classmethod
 	def run_callable(cls, callable_, args_w_keys={}):
 		'''Extract argparse info from callable
@@ -324,26 +299,7 @@ def main(target = None, sys_argv = None):
 
 	return
 
-	# complete_input = {}
-	# first_pass = BuiltinParser().parse_args(sys_argv)
-	#
-	# if first_pass is not None:
-	# 	log_parameters = DEFAULT_LOG_PARAMETERS.copy()
-	#
-	# 	if hasattr(first_pass, 'log_level') and len(first_pass.log_level):
-	# 		log_parameters['level'] = first_pass.log_level.upper()
-	#
-	# 	if hasattr(first_pass, 'log_to_syslog') and first_pass.log_to_syslog:
-	# 		log_parameters['handlers'] = [logging.handlers.SysLogHandler(address = '/dev/log')]
-	#
-	# 	logging.basicConfig(**log_parameters)
-	# 	LOGGER.debug('Logging configured  with: %s', log_parameters)
-	#
-	# 	if hasattr(first_pass, 'input_file'):
-	# 		for input_ in first_pass.input_file:
-	# 			LOGGER.debug('Merging values from %s', input_)
-	# 			complete_input = complete_input | input_
-	#
+	
 	caller = getmodule(stack()[1][0])
 	LOGGER.debug('Got caller: %s', caller)
 
