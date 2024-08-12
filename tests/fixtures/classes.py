@@ -34,6 +34,36 @@ class FixtureClassWNew(FancyStuff):
 		return result
 
 
+class FixtureClassWNewVarargs(FancyStuff):
+	'''
+	'''
+	
+	def __new__(cls, new_pos, /, *args, new_kw):
+		'''
+		'''
+		
+		result = super().__new__(cls)
+		result.new_pos = new_pos
+		result.varargs = args
+		result.new_kw = new_kw
+		return result
+
+
+class FixtureClassWNewVarkw(FancyStuff):
+	'''
+	'''
+	
+	def __new__(cls, new_pos, /, *, new_kw, **kwargs):
+		'''
+		'''
+		
+		result = super().__new__(cls)
+		result.new_pos = new_pos
+		result.new_kw = new_kw
+		result.varkw = kwargs
+		return result
+
+
 class FixtureClassWInit(FancyStuff):
 	'''
 	'''
@@ -44,6 +74,32 @@ class FixtureClassWInit(FancyStuff):
 		
 		self.init_pos = init_pos
 		self.init_kw = init_kw
+
+
+class FixtureClassWInitVarargs(FancyStuff):
+	'''
+	'''
+	
+	def __init__(self, init_pos, /, *args, init_kw):
+		'''
+		'''
+		
+		self.init_pos = init_pos
+		self.varargs = args
+		self.init_kw = init_kw
+
+
+class FixtureClassWInitVarkw(FancyStuff):
+	'''
+	'''
+	
+	def __init__(self, init_pos, /, *, init_kw, **kwargs):
+		'''
+		'''
+		
+		self.init_pos = init_pos
+		self.init_kw = init_kw
+		self.varkw = kwargs
 
 
 class FixtureClassWNewAndInit(FancyStuff):
@@ -65,6 +121,66 @@ class FixtureClassWNewAndInit(FancyStuff):
 		
 		self.init_pos = init_pos
 		self.init_kw = init_kw
+
+
+class FixtureClassWNewAndInitNVar(FancyStuff):
+	'''
+	'''
+	
+	def __new__(cls, foo, /, *, bar):
+		'''
+		'''
+		
+		result = super().__new__(cls)
+		result.new_pos = new_pos
+		result.new_kw = new_kw
+		return result
+	
+	def __init__(self, foo, /, *, bar):
+		'''
+		'''
+		
+		self.init_pos = init_pos
+		self.init_kw = init_kw
+
+
+class FixtureClassWNewAndInitVarNew(FancyStuff):
+	'''
+	'''
+	
+	def __new__(cls, *args, **kwargs):
+		'''
+		'''
+		
+		result = super().__new__(cls)
+		return result
+	
+	def __init__(self, foo, /, *, bar):
+		'''
+		'''
+		
+		self.init_pos = init_pos
+		self.init_kw = init_kw
+
+
+class FixtureClassWNewAndInitVarInit(FancyStuff):
+	'''
+	'''
+	
+	def __new__(cls, foo, /, *, bar):
+		'''
+		'''
+		
+		result = super().__new__(cls)
+		result.new_pos = new_pos
+		result.new_kw = new_kw
+		return result
+	
+	def __init__(self, *args, **kwargs):
+		'''
+		'''
+		
+		pass
 
 
 class FixtureClassWMethods(FancyStuff):
