@@ -13,7 +13,7 @@ from logging.handlers import SysLogHandler
 from pprint import pprint as pretty_print
 import sys
 
-from ._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, execute_callable, get_target, object_metadata, parameters_from_callable
+from ._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, enumerate_class_callables, execute_callable, get_target, object_metadata, parameters_from_class, parameters_from_callable
 from . import argparse_patched
 
 __version__ = '0.8.0dev0'
@@ -59,7 +59,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 	}
 
 	@classmethod
-	def _prepare_callable_parameter(cls, **details):
+	def _prepare_parameter(cls, **details):
 		'''Extends argument's values
 		Uses the defaults, annotations and docstring to extend the argument values (type, action, etc.)
 		
@@ -121,7 +121,34 @@ class IntrospectedArgumentParser(ArgumentParser):
 			}
 
 		return result, errors, warnings
-
+	
+	@classmethod
+	def _prepare_parameters(cls, raw_parameters, container_name, initial_values={}):
+		'''Prepare parameters
+		Takes introspected parameters and convert them into argparse friendly versions.
+		
+		:param dict raw_parameters: a mapping of parameter name to parameter details like the one returned by "parameters_from_callable"
+		:param str container_name: the name of the object containing the provided parameters
+		:param dict? initial_values: a mapping of parameter names and values to use as default (overriding the ones in the signature if present)
+		:returns dict: a mapping of parameter names and details that can be used to build an ArgumentParser
+		'''
+		
+		parameters = {}
+		for parameter, details in raw_parameters.items():
+			parameter_args, errors, warnings = cls._prepare_parameter(**details)
+			for error in errors:
+				LOGGER.error(error.format(parameter_name=parameter, parent_description=container_name))
+			for warning in warnings:
+				LOGGER.warning(warning.format(parameter_name=parameter, parent_description=container_name))
+			if parameter in initial_values:
+				parameter_args['default'] = initial_values[parameter]
+			parameter_name = '_'.join((container_name, parameter))
+			parameter_name = parameter_name.replace('_', '-')
+			if not details['positional']:
+				parameter_name = '--{}'.format(parameter_name)
+			parameters[parameter_name] = parameter_args
+		return parameters
+	
 	@classmethod
 	def from_callable(cls, callable_, from_class=False, parents=None, initial_values={}):
 		'''Extract argparse info from callable
@@ -143,14 +170,52 @@ class IntrospectedArgumentParser(ArgumentParser):
 		if parents is not None:
 			parser_args['parents'] = parents
 		result = cls(**parser_args)
-		parameters = cls.params_from_callable(callable_, callable_metadata=callable_metadata, initial_values=initial_values)
+		
+		raw_parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata, from_class=from_class)
+		if 'version' in callable_metadata:
+			raw_parameters['version'] = {'version': callable_metadata['version'], 'positional': False}
+		parameters = cls._prepare_parameters(raw_parameters=raw_parameters, container_name=callable_metadata['name'],
+									   initial_values=initial_values)
 		for parameter_name, kwargs in parameters.items():
 			result.add_argument(parameter_name, **kwargs)
 
 		result.set_defaults(callable=callable_)
 
 		return result
+	
+	@classmethod
+	def from_class(cls, class_, parents=None, initial_values={}):
+		'''Extract argparse info from class
+		Uses introspection to build a dict out of a class, usable to build an argparse tree.
 
+		ToDo:
+		- Documentation
+		'''
+		
+		LOGGER.debug('Generating parser data for class: %s', class_)
+		class_metadata = object_metadata(class_)
+		
+		parser_args = {
+			'prog'				: class_metadata['name'],
+			'description'		: class_metadata.get('description', None),
+			'epilog'			: class_metadata.get('long_description', None),
+			'formatter_class'	: LocalFormatterClass,
+		}
+		if parents is not None:
+			parser_args['parents'] = parents
+		result = cls(**parser_args)
+		raw_parameters = parameters_from_class(class_)
+		if 'version' in class_metadata:
+			raw_parameters['version'] = {'version': class_metadata['version'], 'positional': False}
+		parameters = cls._prepare_parameters(raw_parameters=raw_parameters, container_name=class_metadata['name'],
+											 initial_values=initial_values)
+		for parameter_name, kwargs in parameters.items():
+			result.add_argument(parameter_name, **kwargs)
+		
+		result.set_defaults(callable=class_)
+		
+		return result
+	
 	@classmethod
 	def new_base_parser(cls):
 		'''Return new base parser
@@ -166,38 +231,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 			result.add_argument(parameter_name, **kwargs)
 
 		return result
-
-	@classmethod
-	def params_from_callable(cls, callable_, from_class=False, initial_values={}, callable_metadata=None):
-		'''Extract argparse info from callable
-		Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 		
-		ToDo:
-		- Documentation
-		'''
-
-		if callable_metadata is None:
-			callable_metadata = object_metadata(callable_)
-		raw_parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata, from_class=from_class)
-		if 'version' in callable_metadata:
-			raw_parameters['version'] = {'version' : callable_metadata['version'], 'positional' : False}
-		parameters = {}
-		for parameter, details in raw_parameters.items():
-			parameter_args, errors, warnings = cls._prepare_callable_parameter(**details)
-			for error in  errors:
-				LOGGER.error(error.format(parameter_name=parameter, parent_description=callable_metadata['name']))
-			for warning in  warnings:
-				LOGGER.warning(warning.format(parameter_name=parameter, parent_description=callable_metadata['name']))
-			if parameter in initial_values:
-				parameter_args['default'] = initial_values[parameter]
-			parameter_name = '_'.join((callable_metadata['name'], parameter))
-			parameter_name = parameter_name.replace('_', '-')
-			if not details['positional']:
-				parameter_name = '--{}'.format(parameter_name)
-			parameters[parameter_name] = parameter_args
-
-		return parameters
-
 	@classmethod
 	def run_callable(cls, callable_, args_w_keys={}):
 		'''Extract argparse info from callable
@@ -272,8 +306,7 @@ def main(target = None, sys_argv = None):
 		LOGGER.debug('Generating parser data for target as a module')
 		raise NotImplementedError('Module target')
 	elif target_type == IS_CLASS:
-		LOGGER.debug('Generating parser data for target as a class')
-		raise NotImplementedError('Class target')
+		parser = IntrospectedArgumentParser.from_class(class_=target, parents=[base_parser], initial_values=initial_values)
 	elif target_type == IS_CALLABLE:
 		parser = IntrospectedArgumentParser.from_callable(callable_=target, parents=[base_parser], initial_values=initial_values)
 	else:
