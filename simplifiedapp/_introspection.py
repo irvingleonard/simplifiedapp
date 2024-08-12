@@ -7,7 +7,7 @@ ToDo:
 '''
 
 from importlib import import_module
-from inspect import getfullargspec, getmodule, isclass, ismodule, stack as inspect_stack
+from inspect import getfullargspec, getmembers, getmodule, isclass, ismodule, stack as inspect_stack
 from logging import getLogger
 from sys import modules
 
@@ -18,6 +18,23 @@ LOGGER = getLogger(__name__)
 IS_CALLABLE, IS_CLASS, IS_MODULE = 'callable', 'class', 'module'
 IS_BOUND_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD = 'bound_method', 'class_method', 'static_method'
 
+def enumerate_class_callables(class_):
+	'''Enumerate class callables
+	Use instrospection to indentify all the classes and callables members of the provided class. Classes are also callable but they're returned separated to support other high level functions.
+	
+	:param class_: the class to find members of
+	:returns tuple: the list of callables and the list of classes
+	'''
+	
+	callables, classes = [], []
+	for name, attr in getmembers(class_):
+		if (name in ('__call__',)) or (name[:2] != '__'):
+			if isclass(attr):
+				classes.append(attr)
+			elif callable(attr):
+				callables.append(attr)
+	return callables, classes
+	
 def execute_callable(callable_, args_w_keys={}, parameters=None, callable_metadata=None):
 	'''Execute a callable
 	"Call" the provided callable with the applicable parameters found in "kwargs". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
