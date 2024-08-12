@@ -18,7 +18,7 @@ LOGGER = getLogger(__name__)
 IS_CALLABLE, IS_CLASS, IS_MODULE = 'callable', 'class', 'module'
 IS_BOUND_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD = 'bound_method', 'class_method', 'static_method'
 
-def execute_callable(callable_, args_w_keys={}, callable_metadata=None, parameters=None):
+def execute_callable(callable_, args_w_keys={}, parameters=None, callable_metadata=None):
 	'''Execute a callable
 	"Call" the provided callable with the applicable parameters found in "kwargs". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
 	'''
@@ -31,8 +31,11 @@ def execute_callable(callable_, args_w_keys={}, callable_metadata=None, paramete
 	genealogy = callable_.__qualname__.split('.')
 	
 	if isclass(callable_):
-		LOGGER.debug('Instantiating class "%s" with: %s', callable_.__qualname__, args_w_keys)
-		result = instantiate_class(class_=callable_, args_w_keys=args_w_keys)
+		if parameters is None:
+			parameters = parameters_from_class(callable_)
+		args, kwargs = prepare_arguments(parameters=parameters, args_w_keys=args_w_keys)
+		LOGGER.debug('Instantiating class "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
+		result = callable_(*args, **kwargs)
 	elif len(genealogy) == 1:
 		if parameters is None:
 			parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata)
@@ -47,9 +50,10 @@ def execute_callable(callable_, args_w_keys={}, callable_metadata=None, paramete
 			parents = [getattr(module, genealogy[0])]
 			for parent in genealogy[1:-1]:
 				parents.append(getattr(parents[-1], parent))
-			parent_instance = instantiate_class(class_=parents[-1], args_w_keys=args_w_keys)
-			LOGGER.debug('Running bound method "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
-			result = getattr(parent_instance, callable_metadata['name'])(*args, **kwargs)
+			parent_instance = execute_callable(parents[-1], args_w_keys=args_w_keys)
+			bound_method = getattr(parent_instance, callable_metadata['name'])
+			LOGGER.debug('Running bound method "%s" with: %s & %s', bound_method.__qualname__, args, kwargs)
+			result = bound_method(*args, **kwargs)
 		else:
 			LOGGER.debug('Running unbound method "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
 			result = callable_(*args, **kwargs)
@@ -106,17 +110,6 @@ def get_target(target=None):
 
 	return target, target_type
 
-def instantiate_class(class_, args_w_keys={}):
-	'''Instantiate a class
-	This code works under the assumption that a class implementing __new__ and __init__ will HAVE to declare "varargs" and "varkw" parameters in both methods, which would take into account that
-	'''
-
-	parameters_new, new_is_static = parameters_from_method(class_.__new__)
-	new_args, new_kwargs = prepare_arguments(parameters=parameters_new, args_w_keys=args_w_keys)
-	parameters_init, init_is_bound = parameters_from_method(class_.__init__)
-	init_args, init_kwargs = prepare_arguments(parameters=parameters_init, args_w_keys=args_w_keys)
-	return class_(*(new_args + init_args), **(new_kwargs | init_kwargs))
-
 def object_metadata(obj):
 	'''Gets metadata from an object
 	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring.
@@ -160,7 +153,8 @@ def object_metadata(obj):
 	return metadata
 
 def parameters_from_class(class_):
-	'''
+	'''Class parameters details
+	Uses introspection to extract the parameters required/allowed by class and as much details as possible from them. This is trickier and different from the method version because class instantiation includes a call to __new__ and another to __init__ each of which could require different combination of parameters.
 	'''
 	
 	parameters, kw_parameters, new_varargs, new_varkw = {}, {}, None, None
