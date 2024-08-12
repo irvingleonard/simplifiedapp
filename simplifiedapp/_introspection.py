@@ -159,6 +159,52 @@ def object_metadata(obj):
 
 	return metadata
 
+def parameters_from_class(class_):
+	'''
+	'''
+	
+	parameters, kw_parameters, new_varargs, new_varkw = {}, {}, None, None
+	parameters_new, new_is_static = parameters_from_method(class_.__new__)
+	for parameter, details in parameters_new.items():
+		if ('positional' in details) and details['positional']:
+			if ('special' in details) and (details['special'] == 'varargs'):
+				new_varargs = parameter
+			parameters[parameter] = details
+		elif ('special' in details) and (details['special'] == 'varkw'):
+			new_varkw = parameter
+		else:
+			kw_parameters[parameter] = details
+	
+	init_varargs, init_varkw = None, None
+	parameters_init, init_is_bound = parameters_from_method(class_.__init__)
+	for parameter, details in parameters_init.items():
+		if ('positional' in details) and details['positional']:
+			if ('special' in details) and (details['special'] == 'varargs'):
+				init_varargs = parameter
+			if parameter not in parameters:
+				parameters[parameter] = details
+			else:
+				LOGGER.debug('Parameter used by __new__ and __init__: %s | %s', parameter, details)
+		elif ('special' in details) and (details['special'] == 'varkw'):
+			init_varkw = parameter
+		else:
+			if parameter not in kw_parameters:
+				kw_parameters[parameter] = details
+			else:
+				LOGGER.debug('Parameter used by __new__ and __init__: %s | %s', parameter, details)
+	
+	if init_varargs is not None:
+		parameters[init_varargs] = parameters_init[init_varargs]
+	elif new_varargs is not None:
+		parameters[new_varargs] = parameters_new[new_varargs]
+	
+	if init_varkw is not None:
+		kw_parameters[init_varkw] = parameters_init[init_varkw]
+	elif new_varkw is not None:
+		kw_parameters[new_varkw] = parameters_new[new_varkw]
+		
+	return parameters | kw_parameters
+
 def parameters_from_callable(callable_, callable_metadata=None, from_class=False):
 	'''Callable parameters details
 	Uses introspection to extract the parameters required/allowed by callable and as much details as possible from them.
