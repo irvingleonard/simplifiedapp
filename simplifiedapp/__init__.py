@@ -13,7 +13,7 @@ from logging.handlers import SysLogHandler
 from pprint import pprint as pretty_print
 import sys
 
-from ._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, enumerate_object_callables, execute_callable, get_target, object_metadata, parameters_from_class, parameters_from_function
+from ._introspection import IS_CLASS, IS_FUNCTION, IS_MODULE, enumerate_object_callables, execute_callable, get_target, object_metadata, parameters_from_class, parameters_from_function
 from . import argparse_patched
 
 __version__ = '0.8.0dev0'
@@ -307,7 +307,7 @@ def main(target = None, sys_argv = None):
 		raise NotImplementedError('Module target')
 	elif target_type == IS_CLASS:
 		parser = IntrospectedArgumentParser.from_class(class_=target, parents=[base_parser], initial_values=initial_values)
-	elif target_type == IS_CALLABLE:
+	elif target_type == IS_FUNCTION:
 		parser = IntrospectedArgumentParser.from_callable(callable_=target, parents=[base_parser], initial_values=initial_values)
 	else:
 		raise RuntimeError('Unknown target type "{}"'.format(target_type))

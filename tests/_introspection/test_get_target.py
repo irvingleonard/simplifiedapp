@@ -8,7 +8,7 @@ from unittest import TestCase
 
 from fixtures import _introspection as fixtures_introspection
 from fixtures.functions import *
-from simplifiedapp._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, get_target
+from simplifiedapp._introspection import IS_CLASS, IS_FUNCTION, IS_MODULE, get_target
 
 class TestGetTarget(TestCase):
 	'''
@@ -20,7 +20,7 @@ class TestGetTarget(TestCase):
 		Test "get_target" with a callable provided as target
 		'''
 
-		expected_result = (fixture_empty_function, IS_CALLABLE)
+		expected_result = (fixture_empty_function, IS_FUNCTION)
 		self.assertEqual(expected_result, get_target(target=fixture_empty_function))
 
 	def test_class_target(self):
@@ -66,7 +66,7 @@ class TestGetTarget(TestCase):
 		'''
 
 		from unittest.case import addModuleCleanup
-		expected_result = (addModuleCleanup, IS_CALLABLE)
+		expected_result = (addModuleCleanup, IS_FUNCTION)
 		self.assertEqual(expected_result, get_target('addModuleCleanup'))
 
 	def test_module_importable_as_string(self):

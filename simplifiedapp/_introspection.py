@@ -15,7 +15,7 @@ from docstring_parser import parse as docstring_parse
 
 LOGGER = getLogger(__name__)
 
-IS_CALLABLE, IS_CLASS, IS_MODULE = 'CALLABLE', 'CLASS', 'MODULE'
+IS_CLASS, IS_FUNCTION, IS_MODULE = 'CLASS', 'FUNCTION', 'MODULE'
 IS_CLASS_METHOD, IS_INSTANCE_METHOD, IS_STATIC_METHOD = 'CLASS_METHOD', 'INSTANCE_METHOD', 'STATIC_METHOD'
 
 def enumerate_object_callables(obj):
@@ -79,10 +79,10 @@ def execute_callable(callable_, args_w_keys={}, parameters=None, callable_metada
 
 def get_target(target=None):
 	'''Figure out the target and its type
-	Use introspection to find the caller. It wouldn't be the caller to this function but the caller to this function's caller or whatever is passed as parameter. It also figures out if it's a module, a class, or a callable
+	Use introspection to find the caller. It wouldn't be the caller to this function but the caller to this function's caller or whatever is passed as parameter. It also figures out if it's a module, a class, or a function
 
 	:param target: Optionally pass the target (just passthrough) or a string to resolve
-	:returns tuple: the target and the corresponding IS_CALLABLE, IS_CLASS, or IS_MODULE
+	:returns tuple: the target and the corresponding IS_FUNCTION, IS_CLASS, or IS_MODULE
 	'''
 
 	caller = inspect_stack()
@@ -121,7 +121,7 @@ def get_target(target=None):
 		elif isclass(target):
 			target_type = IS_CLASS
 		else:
-			target_type = IS_CALLABLE
+			target_type = IS_FUNCTION
 	except Exception as error:
 		raise ValueError('Target ({}) is not supported: {}'.format(target, error))
 
