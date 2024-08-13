@@ -55,7 +55,7 @@ def execute_callable(callable_, args_w_keys={}, parameters=None, callable_metada
 		result = callable_(*args, **kwargs)
 	elif len(genealogy) == 1:
 		if parameters is None:
-			parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata)
+			parameters = parameters_from_function(callable_, function_metadata=callable_metadata)
 		args, kwargs = prepare_arguments(parameters=parameters, args_w_keys=args_w_keys)
 		LOGGER.debug('Running function "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
 		result = callable_(*args, **kwargs)
@@ -216,28 +216,30 @@ def parameters_from_class(class_):
 		
 	return parameters | kw_parameters
 
-def parameters_from_callable(callable_, callable_metadata=None, from_class=False):
-	'''Callable parameters details
-	Uses introspection to extract the parameters required/allowed by callable and as much details as possible from them.
+def parameters_from_function(function_, function_metadata=None, from_class=False):
+	'''Function parameters details
+	Uses introspection to extract the parameters required/allowed by a function and as much details as possible from them.
 	
-	ToDo:
-	- Documentation
+	:param obj function_: the function to process
+	:param dict? function_metadata: a mapping with the details of the function as returned by "object_metadata"
+	:param bool? from_class: a flag signaling that it should be treated as a method
+	:returns dict: a mapping of parameters and details
 	'''
 	
 	try:
-		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = getfullargspec(callable_)
+		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = getfullargspec(function_)
 	except TypeError:
-		LOGGER.debug('Signature inspect failed. Using generic signature for callable: %s', callable_)
+		LOGGER.debug('Signature inspect failed. Using generic signature for callable: %s', function_)
 		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = [], 'args', 'kwargs', None, [], None, {}	#Generic signature: just args and kwargs, whatever you pass will be.
 		if from_class:
 			args = ['self']	# Default will be bound method
 	
-	if callable_ in [object.__init__, object.__new__]:
+	if function_ in [object.__init__, object.__new__]:
 		#Builtin object.__init__ case, where *args and **kwargs are accepted but only through super()
 		#Builtin object.__new__ simply forwards whatever is passed as *args and **kwargs to __init__. You should get the list of parameters from that one instead.
 		varargs, varkw = None, None
 	
-	LOGGER.debug('Callable "%s" yield signature: %s' % (callable_, dict(zip(('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations'),(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations)))))
+	LOGGER.debug('Function "%s" yield signature: %s' % (function_, dict(zip(('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations'),(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations)))))
 	
 	if defaults is None:
 		defaults = []
@@ -256,10 +258,10 @@ def parameters_from_callable(callable_, callable_metadata=None, from_class=False
 	for param, annotation in annotations.items():
 		parameters[param]['annotation'] = annotation
 
-	if callable_metadata is None:
-		callable_metadata = object_metadata(callable_)
-	if 'parameters' in callable_metadata:
-		for param, docstring in callable_metadata['parameters'].items():
+	if function_metadata is None:
+		function_metadata = object_metadata(function_)
+	if 'parameters' in function_metadata:
+		for param, docstring in function_metadata['parameters'].items():
 			if param not in parameters:
 				LOGGER.warning('Docstring references a missing parameter: %s', param)
 			else:
@@ -272,7 +274,7 @@ def parameters_from_method(method, method_metadata=None):
 	Uses introspection to extract the parameters required/allowed by method and as much details as possible from them. Also returns the type of method (bound, class, static)
 	'''
 
-	parameters = parameters_from_callable(method, callable_metadata=method_metadata, from_class=True)
+	parameters = parameters_from_function(method, function_metadata=method_metadata, from_class=True)
 	if len(parameters):
 		first_param = tuple(parameters.keys())[0]
 		if first_param == 'self':

@@ -13,7 +13,7 @@ from logging.handlers import SysLogHandler
 from pprint import pprint as pretty_print
 import sys
 
-from ._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, enumerate_class_callables, execute_callable, get_target, object_metadata, parameters_from_class, parameters_from_callable
+from ._introspection import IS_CALLABLE, IS_CLASS, IS_MODULE, enumerate_class_callables, execute_callable, get_target, object_metadata, parameters_from_class, parameters_from_function
 from . import argparse_patched
 
 __version__ = '0.8.0dev0'
@@ -171,7 +171,7 @@ class IntrospectedArgumentParser(ArgumentParser):
 			parser_args['parents'] = parents
 		result = cls(**parser_args)
 		
-		raw_parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata, from_class=from_class)
+		raw_parameters = parameters_from_function(callable_, function_metadata=callable_metadata, from_class=from_class)
 		if 'version' in callable_metadata:
 			raw_parameters['version'] = {'version': callable_metadata['version'], 'positional': False}
 		parameters = cls._prepare_parameters(raw_parameters=raw_parameters, container_name=callable_metadata['name'],

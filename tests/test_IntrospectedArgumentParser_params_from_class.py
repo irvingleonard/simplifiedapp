@@ -9,7 +9,7 @@ from unittest import TestCase
 from fixtures.classes import *
 from simplifiedapp import IntrospectedArgumentParser, VarKWParameter
 
-params_from_class = IntrospectedArgumentParser.params_from_class
+# params_from_class = IntrospectedArgumentParser.params_from_class
 class TestIntrospectedArgumentParserParamsFromCallable(TestCase):
 	'''
 	Tests for the IntrospectedArgumentParser.params_from_class class method
