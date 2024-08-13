@@ -15,7 +15,7 @@ from docstring_parser import parse as docstring_parse
 
 LOGGER = getLogger(__name__)
 
-IS_CLASS, IS_FUNCTION, IS_MODULE = 'CLASS', 'FUNCTION', 'MODULE'
+IS_CLASS, IS_FUNCTION, IS_METHOD, IS_MODULE = 'CLASS', 'FUNCTION', 'METHOD', 'MODULE'
 IS_CLASS_METHOD, IS_INSTANCE_METHOD, IS_STATIC_METHOD = 'CLASS_METHOD', 'INSTANCE_METHOD', 'STATIC_METHOD'
 
 def enumerate_object_callables(obj):
@@ -37,42 +37,35 @@ def enumerate_object_callables(obj):
 	
 def execute_callable(callable_, args_w_keys={}, parameters=None, callable_metadata=None):
 	'''Execute a callable
-	"Call" the provided callable with the applicable parameters found in "kwargs". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
+	"Call" the provided callable with the applicable parameters found in "args_w_keys". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
 	'''
 	
-	if not callable(callable_):
-		raise ValueError('The argument provided "{}" is not actually a callable'.format(callable_))
+	callable_type, parent = identify_callable(callable_)
 	if callable_metadata is None:
 		callable_metadata = object_metadata(callable_)
 	
-	genealogy = callable_.__qualname__.split('.')
-	
-	if isclass(callable_):
+	if callable_type == IS_CLASS:
 		if parameters is None:
 			parameters = parameters_from_class(callable_)
 		args, kwargs = prepare_arguments(parameters=parameters, args_w_keys=args_w_keys)
-		LOGGER.debug('Instantiating class "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
+		LOGGER.debug('Instantiating class "%s" with: %s & %s', callable_metadata['name'], args, kwargs)
 		result = callable_(*args, **kwargs)
-	elif len(genealogy) == 1:
+	elif callable_type == IS_FUNCTION:
 		if parameters is None:
 			parameters = parameters_from_function(callable_, function_metadata=callable_metadata)
 		args, kwargs = prepare_arguments(parameters=parameters, args_w_keys=args_w_keys)
-		LOGGER.debug('Running function "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
+		LOGGER.debug('Running function "%s" with: %s & %s', callable_metadata['name'], args, kwargs)
 		result = callable_(*args, **kwargs)
 	else:
 		parameters, method_type = parameters_from_method(method=callable_, method_metadata=callable_metadata)
 		args, kwargs = prepare_arguments(parameters=parameters, args_w_keys=args_w_keys)
 		if method_type == IS_INSTANCE_METHOD:
-			module = import_module(callable_.__module__)
-			parents = [getattr(module, genealogy[0])]
-			for parent in genealogy[1:-1]:
-				parents.append(getattr(parents[-1], parent))
-			parent_instance = execute_callable(parents[-1], args_w_keys=args_w_keys)
-			bound_method = getattr(parent_instance, callable_metadata['name'])
-			LOGGER.debug('Running bound method "%s" with: %s & %s', bound_method.__qualname__, args, kwargs)
-			result = bound_method(*args, **kwargs)
+			parent_instance = execute_callable(parent, args_w_keys=args_w_keys)
+			instance_method = getattr(parent_instance, callable_metadata['name'])
+			LOGGER.debug('Running instance method "%s" with: %s & %s', instance_method.__qualname__, args, kwargs)
+			result = instance_method(*args, **kwargs)
 		else:
-			LOGGER.debug('Running unbound method "%s" with: %s & %s', callable_.__qualname__, args, kwargs)
+			LOGGER.debug('Running %s "%s" with: %s & %s', method_type, callable_metadata['name'], args, kwargs)
 			result = callable_(*args, **kwargs)
 	
 	return result
@@ -127,6 +120,38 @@ def get_target(target=None):
 
 	return target, target_type
 
+def identify_callable(callable_):
+	'''Identify a callable
+	Detects if a callable is a class, a class/instance/static method, or a function. For methods and deep classes it also returns the parent class.
+	
+	:param callable_: the callable that needs to be identified
+	:returns tuple: the "callable type" and its parent. The callable type will be one of: IS_CLASS, IS_FUNCTION, IS_METHOD.
+	'''
+	
+	if not callable(callable_):
+		raise ValueError('The argument provided "{}" is not a callable'.format(callable_))
+	
+	genealogy = callable_.__qualname__.split('.')
+	if len(genealogy) == 1:
+		parent = None
+	elif len(genealogy) > 1:
+		module = import_module(callable_.__module__)
+		parents = [getattr(module, genealogy[0])]
+		for parent in genealogy[1:-1]:
+			parents.append(getattr(parents[-1], parent))
+		parent = parents[-1]
+	else:
+		raise NotImplementedError('Got callable with no __qualname__ "{}"'.format(callable_))
+	
+	if isclass(callable_):
+		callable_type = IS_CLASS
+	elif parent is None:
+		callable_type = IS_FUNCTION
+	else:
+		callable_type = IS_METHOD
+	
+	return callable_type, parent
+
 def object_metadata(obj):
 	'''Gets metadata from an object
 	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring.
@@ -168,6 +193,21 @@ def object_metadata(obj):
 			metadata['returns'] = docstring_return
 
 	return metadata
+
+def parameters_from_callable(callable_, callable_metadata=None):
+	'''
+	
+	'''
+	
+	callable_type, parent = identify_callable(callable_)
+	if callable_type == IS_CLASS:
+		parameters = parameters_from_class(callable_)
+	elif callable_type == IS_FUNCTION:
+		parameters = parameters_from_function(callable_, function_metadata=callable_metadata)
+	else:
+		parameters, method_type = parameters_from_method(method=callable_, method_metadata=callable_metadata)
+	
+	return parameters
 
 def parameters_from_class(class_):
 	'''Class parameters details
@@ -275,6 +315,7 @@ def parameters_from_method(method, method_metadata=None):
 	'''
 
 	parameters = parameters_from_function(method, function_metadata=method_metadata, from_class=True)
+	method_type = IS_STATIC_METHOD
 	if len(parameters):
 		first_param = tuple(parameters.keys())[0]
 		if first_param == 'self':
@@ -283,8 +324,6 @@ def parameters_from_method(method, method_metadata=None):
 		elif first_param in ['cls', 'type']:
 			del parameters[first_param]
 			method_type = IS_CLASS_METHOD
-		else:
-			method_type = IS_STATIC_METHOD
 
 	return parameters, method_type
 
