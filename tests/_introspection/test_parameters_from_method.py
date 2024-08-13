@@ -6,7 +6,7 @@ Testing the _introspection.parameters_from_callable function
 from unittest import TestCase
 
 from fixtures._introspection import *
-from simplifiedapp._introspection import IS_BOUND_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD, parameters_from_method
+from simplifiedapp._introspection import IS_CLASS_METHOD, IS_INSTANCE_METHOD, IS_STATIC_METHOD, parameters_from_method
 
 class TestParametersFromMethod(TestCase):
 	'''
@@ -32,7 +32,7 @@ class TestParametersFromMethod(TestCase):
 		}
 		result_parameters, result_type = parameters_from_method(FixtureDocumentedClass.fixture_documented_instance_method)
 		self.assertDictEqual(expected_parameters, result_parameters)
-		self.assertEqual(IS_BOUND_METHOD, result_type)
+		self.assertEqual(IS_INSTANCE_METHOD, result_type)
 
 	def test_class_method(self):
 		'''

@@ -15,25 +15,25 @@ from docstring_parser import parse as docstring_parse
 
 LOGGER = getLogger(__name__)
 
-IS_CALLABLE, IS_CLASS, IS_MODULE = 'callable', 'class', 'module'
-IS_BOUND_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD = 'bound_method', 'class_method', 'static_method'
+IS_CALLABLE, IS_CLASS, IS_MODULE = 'CALLABLE', 'CLASS', 'MODULE'
+IS_CLASS_METHOD, IS_INSTANCE_METHOD, IS_STATIC_METHOD = 'CLASS_METHOD', 'INSTANCE_METHOD', 'STATIC_METHOD'
 
-def enumerate_class_callables(class_):
-	'''Enumerate class callables
-	Use instrospection to indentify all the classes and callables members of the provided class. Classes are also callable but they're returned separated to support other high level functions.
+def enumerate_object_callables(obj):
+	'''Enumerate object functions and classes
+	Use instrospection to indentify all the classes and function members of the provided object. It will ignore all dunder methods except for "__call__".
 	
-	:param class_: the class to find members of
-	:returns tuple: the list of callables and the list of classes
+	:param obj: the object to find members of
+	:returns tuple: the list of functions and the list of classes
 	'''
 	
-	callables, classes = [], []
-	for name, attr in getmembers(class_):
+	functions, classes = [], []
+	for name, attr in getmembers(obj):
 		if (name in ('__call__',)) or (name[:2] != '__'):
 			if isclass(attr):
 				classes.append(attr)
 			elif callable(attr):
-				callables.append(attr)
-	return callables, classes
+				functions.append(attr)
+	return functions, classes
 	
 def execute_callable(callable_, args_w_keys={}, parameters=None, callable_metadata=None):
 	'''Execute a callable
@@ -62,7 +62,7 @@ def execute_callable(callable_, args_w_keys={}, parameters=None, callable_metada
 	else:
 		parameters, method_type = parameters_from_method(method=callable_, method_metadata=callable_metadata)
 		args, kwargs = prepare_arguments(parameters=parameters, args_w_keys=args_w_keys)
-		if method_type == IS_BOUND_METHOD:
+		if method_type == IS_INSTANCE_METHOD:
 			module = import_module(callable_.__module__)
 			parents = [getattr(module, genealogy[0])]
 			for parent in genealogy[1:-1]:
@@ -279,7 +279,7 @@ def parameters_from_method(method, method_metadata=None):
 		first_param = tuple(parameters.keys())[0]
 		if first_param == 'self':
 			del parameters[first_param]
-			method_type = IS_BOUND_METHOD
+			method_type = IS_INSTANCE_METHOD
 		elif first_param in ['cls', 'type']:
 			del parameters[first_param]
 			method_type = IS_CLASS_METHOD
