@@ -12,6 +12,7 @@ from logging import getLogger
 from sys import modules
 
 from docstring_parser import parse as docstring_parse
+from introspection import Signature
 
 LOGGER = getLogger(__name__)
 
@@ -359,3 +360,75 @@ def prepare_arguments(parameters, args_w_keys={}):
 			raise ValueError('Missing value for parameter "{}"'.format(parameter))
 
 	return args, kwargs
+
+
+class Callable:
+	'''
+	
+	'''
+	
+	def __init__(self, callable_):
+		'''
+		
+		'''
+		
+		if not callable(callable_):
+			raise ValueError('The argument provided "{}" is not a callable'.format(callable_))
+		
+		super()__init__()
+		
+		self._callable_ = callable_
+		
+	def __getattr__(self, item):
+		'''
+		
+		'''
+		
+		if item == 'metadata':
+			value = object_metadata(self._callable_)
+		elif item == 'module':
+			value = import_module(self._callable_.__module__)
+		elif item == 'parents':
+			genealogy = self._callable_.__qualname__.split('.')
+			value = [getattr(self.module, genealogy[0])]
+			for parent in genealogy[1:-1]:
+				value.append(getattr(parents[-1], parent))
+			value.reverse()
+		elif item == 'parent':
+			value = self.parents[0] if self.parents else None0
+		elif item in ('signature', 'type'):
+			signature, type_ = self._get_signature_detect_type()
+			setattr(self, 'signature', signature)
+			setattr(self, 'type', type_)
+			value = signature if item == 'signature' else type_
+		elif item in self.metadata:
+			return self.metadata[item]
+		else:
+			return getattr(self._callable_, item)
+			
+		setattr(self, item, value)
+		return value
+	
+	def _get_signature_detect_type(self):
+		'''
+		
+		'''
+		
+		if isclass(self._callable_):
+			raise NotImplementedError('Callable being a class')
+		elif self.parent is None:
+			signature = Signature.from_callable(self._callable_)
+			type_ = IS_FUNCTION
+		else:
+			signature = Signature.for_method(self.parent, self.name)
+			type_ = IS_STATIC_METHOD
+			if signature.parameter_list:
+				if signature.parameter_list[0].name == 'self':
+					signature = signature.without_parameters(0)
+					type_ = IS_INSTANCE_METHOD
+				elif signature.parameter_list[0].name in ('cls', 'type'):
+					signature = signature.without_parameters(0)
+					type_ = IS_CLASS_METHOD
+			
+		return signature, type_
+	
