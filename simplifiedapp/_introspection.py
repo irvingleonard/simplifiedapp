@@ -367,6 +367,8 @@ class Callable:
 	
 	'''
 	
+	FORWARD_METADATA = ('name', 'version', 'description', 'long_description')
+	
 	def __init__(self, callable_):
 		'''
 		
@@ -401,7 +403,7 @@ class Callable:
 			setattr(self, 'signature', signature)
 			setattr(self, 'type', type_)
 			value = signature if item == 'signature' else type_
-		elif item in self.metadata:
+		elif (item in self.FORWARD_METADATA) and (item in self.metadata):
 			return self.metadata[item]
 		else:
 			return getattr(self._callable_, item)
