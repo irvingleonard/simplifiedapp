@@ -380,7 +380,26 @@ class Callable:
 		super()__init__()
 		
 		self._callable_ = callable_
+	
+	def __call__(self, *multiple_args_w_keys, **args_w_keys):
+		'''Execute the callable
+		"Call" this callable with the applicable parameters found in "args_w_keys". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
+			'''
 		
+		if self.type == IS_CLASS:
+			raise NotImplementedError('Instantiating classes')
+			LOGGER.debug('Instantiating class "%s" with: %s & %s', self.name, args, kwargs)
+			result = self._callable_(*args, **kwargs)
+		elif self.type in (IS_FUNCTION, IS_STATIC_METHOD, IS_CLASS_METHOD):
+			args, kwargs = self.signature.bind(**args_w_keys).to_varargs()
+			LOGGER.debug('Running %s "%s" with: %s & %s', str(self.type).lower(), self.name, args, kwargs)
+			result = self._callable_(*args, **kwargs)
+		elif self.type == IS_INSTANCE_METHOD:
+			raise NotImplementedError('Instance method')
+		else:
+			raise ValueError('Callable type not supported "{}"'.format(self.type))
+		return result
+	
 	def __getattr__(self, item):
 		'''
 		
@@ -394,7 +413,7 @@ class Callable:
 			genealogy = self._callable_.__qualname__.split('.')
 			value = [getattr(self.module, genealogy[0])]
 			for parent in genealogy[1:-1]:
-				value.append(getattr(parents[-1], parent))
+				value.append(type(self)(getattr(parents[-1], parent))
 			value.reverse()
 		elif item == 'parent':
 			value = self.parents[0] if self.parents else None0
