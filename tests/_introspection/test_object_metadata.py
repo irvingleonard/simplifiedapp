@@ -6,7 +6,7 @@ Testing the _introspection.object_metadata function
 from unittest import TestCase
 
 from fixtures import _introspection as fixtures_introspection
-from simplifiedapp._introspection import object_metadata
+from simplifiedapp.introspection_patched import object_metadata
 
 VERSION_REGEXP = r'\d+\.\d+\.\d+(?:\.(dev|post)\d+)?'
 

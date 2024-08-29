@@ -377,7 +377,7 @@ class Callable:
 		if not callable(callable_):
 			raise ValueError('The argument provided "{}" is not a callable'.format(callable_))
 		
-		super()__init__()
+		super().__init__()
 		
 		self._callable_ = callable_
 	
@@ -411,12 +411,15 @@ class Callable:
 			value = import_module(self._callable_.__module__)
 		elif item == 'parents':
 			genealogy = self._callable_.__qualname__.split('.')
-			value = [getattr(self.module, genealogy[0])]
-			for parent in genealogy[1:-1]:
-				value.append(type(self)(getattr(parents[-1], parent))
-			value.reverse()
+			if len(genealogy) > 1:
+				value = [getattr(self.module, genealogy[0])]
+				for parent in genealogy[1:-1]:
+					value.append(type(self)(getattr(parents[-1], parent)))
+				value.reverse()
+			else:
+				value = []
 		elif item == 'parent':
-			value = self.parents[0] if self.parents else None0
+			value = self.parents[0] if self.parents else None
 		elif item in ('signature', 'type'):
 			signature, type_ = self._get_signature_detect_type()
 			setattr(self, 'signature', signature)
