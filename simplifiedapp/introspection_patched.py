@@ -81,50 +81,6 @@ def signature_variable_keyword_parameter(self):
 	return None
 Signature.variable_keyword_parameter = property(signature_variable_keyword_parameter)
 
-def signature_bind(self, *args, **kwargs):
-	'''
-	
-	'''
-	
-	fixed_args, fixed_kwargs = [], {}
-	for parameter_name, parameter in self.parameters.items():
-		if parameter.kind in (ParameterKind.POSITIONAL_ONLY, ParameterKind.POSITIONAL_OR_KEYWORD):
-			if len(args):
-				fixed_args.append(args.pop(0))
-			elif parameter_name in kwargs:
-				fixed_args.append(kwargs.pop(parameter_name))
-			elif parameter.default == parameter.empty:
-				raise TypeError('Missing required {} parameter "{}"'.format(parameter.kind, parameter_name))
-			elif self.variable_positional_parameter is not None:
-				fixed_args.append(parameter.default)
-		elif parameter.kind == ParameterKind.VAR_POSITIONAL:
-			if parameter_name in kwargs:
-				fixed_args += kwargs.pop(parameter_name)
-			if args:
-				fixed_args += args
-				args = []
-		elif parameter.kind == ParameterKind.KEYWORD_ONLY:
-			if parameter_name in kwargs:
-				fixed_kwargs[parameter_name] = kwargs.pop(parameter_name)
-			elif parameter.default == parameter.empty:
-				raise TypeError('Missing required keyword only parameter "{}"'.format(parameter_name))
-		elif parameter.kind == ParameterKind.VAR_KEYWORD:
-			if parameter_name in kwargs:
-				fixed_kwargs |= kwargs.pop(parameter_name)
-			if kwargs:
-				fixed_kwargs |= kwargs
-				kwargs = {}
-			
-	if args:
-		LOGGER.warning('Ignoring unused args: %s', args)
-	if kwargs:
-		LOGGER.warning('Ignoring unused kwargs: %s', kwargs)
-		
-	bound_args = super(type(self), self).bind(*fixed_args, **fixed_kwargs)
-	return BoundArguments.from_bound_arguments(bound_args)
-
-Signature.bind = signature_bind
-
 
 class Callable:
 	'''
@@ -219,4 +175,52 @@ class Callable:
 					type_ = IS_CLASS_METHOD
 			
 		return signature, type_
+	
+	@staticmethod
+	def _signature_for_class(class_):
+		'''
+
+		'''
+		
+		pass
+	def bind(self, *args, **kwargs):
+		'''
+
+		'''
+		
+		fixed_args, fixed_kwargs = [], {}
+		for parameter_name, parameter in self.signature.parameters.items():
+			if parameter.kind in (ParameterKind.POSITIONAL_ONLY, ParameterKind.POSITIONAL_OR_KEYWORD):
+				if len(args):
+					fixed_args.append(args.pop(0))
+				elif parameter_name in kwargs:
+					fixed_args.append(kwargs.pop(parameter_name))
+				elif parameter.default == parameter.empty:
+					raise TypeError('Missing required {} parameter "{}"'.format(parameter.kind, parameter_name))
+				elif self.signature.variable_positional_parameter is not None:
+					fixed_args.append(parameter.default)
+			elif parameter.kind == ParameterKind.VAR_POSITIONAL:
+				if parameter_name in kwargs:
+					fixed_args += kwargs.pop(parameter_name)
+				if args:
+					fixed_args += args
+					args = []
+			elif parameter.kind == ParameterKind.KEYWORD_ONLY:
+				if parameter_name in kwargs:
+					fixed_kwargs[parameter_name] = kwargs.pop(parameter_name)
+				elif parameter.default == parameter.empty:
+					raise TypeError('Missing required keyword only parameter "{}"'.format(parameter_name))
+			elif parameter.kind == ParameterKind.VAR_KEYWORD:
+				if parameter_name in kwargs:
+					fixed_kwargs |= kwargs.pop(parameter_name)
+				if kwargs:
+					fixed_kwargs |= kwargs
+					kwargs = {}
+		
+		if args:
+			LOGGER.warning('Ignoring unused args: %s', args)
+		if kwargs:
+			LOGGER.warning('Ignoring unused kwargs: %s', kwargs)
+		
+		return self.signature.bind(*fixed_args, **fixed_kwargs)
 	

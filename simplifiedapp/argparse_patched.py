@@ -70,7 +70,7 @@ argparse._VersionAction.ATTRIBUTE_EQUALITY_IGNORE_LIST = ('container',)
 
 def argument_parser_eq(self, other, /):
 	'''Special __eq__ for ArgumentParser
-	The __init__ method adds an entry to the "_registries" pointing to a funtion defined locally, meaning that it will be pointing to a "different" function on every instance (which will ALWAYS compare as different).
+	The __init__ method adds an entry to the "_registries" pointing to a function defined locally, meaning that it will be pointing to a "different" function on every instance (which will ALWAYS compare as different).
 	'''
 	
 	objects_are_family(self, other)
