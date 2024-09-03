@@ -7,7 +7,7 @@ ToDo:
 '''
 
 from importlib import import_module
-from inspect import isclass
+from inspect import isclass, ismethod
 from logging import getLogger
 
 from docstring_parser import parse as docstring_parse
@@ -81,6 +81,16 @@ def signature_variable_keyword_parameter(self):
 	return None
 Signature.variable_keyword_parameter = property(signature_variable_keyword_parameter)
 
+def signature_without_first_parameter(self):
+	'''Same signature without the first parameter
+	Basically it should be the same as "Signature.without_parameters(0)" but for whatever reason that doesn't achieve the same result.
+	'''
+	if self.parameters:
+		return self.replace(parameters=list(self.parameters.values())[1:])
+	else:
+		LOGGER.warning('No parameter to remove')
+		return self
+Signature.without_first_parameter = signature_without_first_parameter
 
 class Callable:
 	'''
@@ -104,7 +114,7 @@ class Callable:
 	def __call__(self, *multiple_args_w_keys, **args_w_keys):
 		'''Execute the callable
 		"Call" this callable with the applicable parameters found in "args_w_keys". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
-			'''
+		'''
 		
 		if self.type == IS_CLASS:
 			raise NotImplementedError('Instantiating classes')
@@ -121,8 +131,8 @@ class Callable:
 		return result
 	
 	def __getattr__(self, item):
-		'''
-		
+		'''Lazy instantiation
+		Wait until they're needed before resolving potentially costly attributes.
 		'''
 		
 		if item == 'metadata':
@@ -134,7 +144,7 @@ class Callable:
 			if len(genealogy) > 1:
 				value = [getattr(self.module, genealogy[0])]
 				for parent in genealogy[1:-1]:
-					value.append(type(self)(getattr(parents[-1], parent)))
+					value.append(getattr(parents[-1], parent))
 				value.reverse()
 			else:
 				value = []
@@ -154,8 +164,20 @@ class Callable:
 		return value
 	
 	def _get_signature_detect_type(self):
-		'''
+		'''Detect the type of callable and produce a signature and detect the type
 		
+		There are at least 5 different possible callables:
+		- run of the mill function, a plain 'ol regular function, returning whatever the function returns
+		- class, which should return an instance of such class
+		- a class method, which takes a "type" as the first argument
+		- an instance method, which takes "self" as the first argument
+		- a static method, which is very similar to the regular function, only that it's a member of the class
+		
+		An instance method could come from an object (an instantiated class) or the class itself: you'd need to instantiate the class first before calling the method.
+		
+		Type could be one of: IS_FUNCTION, IS_CLASS, IS_INSTANCE_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD
+		
+		:returns tuple: two items tuple, with the signature in the first position and the type on the second
 		'''
 		
 		if isclass(self._callable_):
@@ -166,14 +188,20 @@ class Callable:
 		else:
 			signature = Signature.for_method(self.parent, self.name)
 			type_ = IS_STATIC_METHOD
-			if signature.parameter_list:
-				if signature.parameter_list[0].name == 'self':
-					signature = signature.without_parameters(0)
-					type_ = IS_INSTANCE_METHOD
-				elif signature.parameter_list[0].name in ('cls', 'type'):
-					signature = signature.without_parameters(0)
-					type_ = IS_CLASS_METHOD
 			
+			if isclass(self.parent):
+				if ismethod(self._callable_):
+					signature = signature.without_first_parameter()
+					type_ = IS_CLASS_METHOD
+				elif signature.parameter_list and (signature.parameter_list[0].name == 'self'):
+					LOGGER.warning('Assuming instance method on a class definition based on the first parameter: "self"')
+					signature = signature.without_first_parameter()
+					type_ = IS_INSTANCE_METHOD
+			else:
+				if ismethod(self._callable_):
+					signature = signature.without_first_parameter()
+					type_ = IS_INSTANCE_METHOD
+				
 		return signature, type_
 	
 	@staticmethod

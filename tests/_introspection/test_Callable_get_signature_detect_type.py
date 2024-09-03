@@ -7,7 +7,9 @@ from unittest import TestCase
 
 from fixtures.functions import *
 from fixtures.classes import *
-from simplifiedapp.introspection_patched import IS_FUNCTION, IS_STATIC_METHOD, Callable, Signature
+from simplifiedapp.introspection_patched import IS_CLASS_METHOD, IS_FUNCTION, IS_STATIC_METHOD, Callable, Signature, \
+	IS_INSTANCE_METHOD
+
 
 class TestCallableGetSignatureDetectType(TestCase):
 	'''
@@ -52,38 +54,30 @@ class TestCallableGetSignatureDetectType(TestCase):
 		expected_result = Signature.for_method(FixtureClassWMethods, 'static_method'), IS_STATIC_METHOD
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 	
-	def _test_class_w_class_method(self):
+	def test_class_w_class_method(self):
 		'''
-		Test "execute_callable" with a class method
+		Test "Callable._get_signature_detect_type" with a class method
 		'''
 		
-		args_w_keys = {
-			'pos_arg': 'method_c',
-		}
-		expected_result = 'ultra-class-method_c'
-		self.assertEqual(expected_result, execute_callable(FixtureClassWMethods.class_method, args_w_keys=args_w_keys))
+		callable_ = Callable(FixtureClassWMethods.class_method)
+		expected_result = Signature.for_method(FixtureClassWMethods, 'class_method').without_first_parameter(), IS_CLASS_METHOD
+		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 	
-	def _test_class_w_bound_method(self):
+	def test_class_w_instance_method_from_class(self):
 		'''
-		Test "execute_callable" with a bound method
+		Test "Callable._get_signature_detect_type" with an instance method from a class
 		'''
 		
-		args_w_keys = {
-			'init_arg': 'pre',
-			'pos_arg': 'method_b',
-		}
-		expected_result = 'ultra-pre-bound-method_b'
-		self.assertEqual(expected_result, execute_callable(FixtureClassWMethods.bound_method, args_w_keys=args_w_keys))
+		callable_ = Callable(FixtureClassWMethods.bound_method)
+		expected_result = Signature.for_method(FixtureClassWMethods, 'bound_method').without_first_parameter(), IS_INSTANCE_METHOD
+		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 	
-	def _test_deep_class_w_bound_method(self):
+	def test_class_w_instance_method_from_instance(self):
 		'''
-		Test "execute_callable" with a bound method on a deep class
+		Test "Callable._get_signature_detect_type" with an instance method from an instance
 		'''
 		
-		args_w_keys = {
-			'init_arg': 'pre',
-			'pos_arg': 'deepos',
-			'kw_arg': 'deepkw',
-		}
-		expected_result = 'pre-deepos-deepkw'
-		self.assertEqual(expected_result, execute_callable(FixtureDeepClassL1.FixtureDeepClassL2.FixtureDeepClassL3.deep_method, args_w_keys=args_w_keys))
+		instance_ = FixtureClassWMethods(None)
+		callable_ = Callable(instance_.bound_method)
+		expected_result = Signature.for_method(instance_, 'bound_method').without_first_parameter(), IS_INSTANCE_METHOD
+		self.assertEqual(expected_result, callable_._get_signature_detect_type())
