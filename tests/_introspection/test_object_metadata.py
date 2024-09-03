@@ -103,3 +103,12 @@ class TestObjectMetadata(TestCase):
 		expected_value = 'Simple fixture module for object_metadata.'
 		self.assertEqual(expected_value, metadata['long_description'])
 		
+	def test_undocumented_lambda(self):
+		'''
+		Testing "object_metadata" with an undocumented lambda
+		'''
+		
+		metadata = object_metadata(lambda x: 'lambda' + str(x))
+		
+		expected_value = '<lambda>'
+		self.assertEqual(expected_value, metadata['name'])
