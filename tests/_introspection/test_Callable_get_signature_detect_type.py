@@ -7,8 +7,7 @@ from unittest import TestCase
 
 from fixtures.functions import *
 from fixtures.classes import *
-from simplifiedapp.introspection_patched import IS_CLASS_METHOD, IS_FUNCTION, IS_STATIC_METHOD, Callable, Signature, \
-	IS_INSTANCE_METHOD
+from simplifiedapp.introspection_patched import CallableType, Callable, Signature
 
 
 class TestCallableGetSignatureDetectType(TestCase):
@@ -22,7 +21,7 @@ class TestCallableGetSignatureDetectType(TestCase):
 		'''
 		
 		callable_ = Callable(fixture_function_w_all_parameter_combinations)
-		expected_result = Signature.from_callable(fixture_function_w_all_parameter_combinations), IS_FUNCTION
+		expected_result = Signature.from_callable(fixture_function_w_all_parameter_combinations), CallableType['FUNCTION']
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 
 	
@@ -51,7 +50,7 @@ class TestCallableGetSignatureDetectType(TestCase):
 		'''
 		
 		callable_ = Callable(FixtureClassWMethods.static_method)
-		expected_result = Signature.for_method(FixtureClassWMethods, 'static_method'), IS_STATIC_METHOD
+		expected_result = Signature.for_method(FixtureClassWMethods, 'static_method'), CallableType['STATIC_METHOD']
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 	
 	def test_class_w_class_method(self):
@@ -60,7 +59,7 @@ class TestCallableGetSignatureDetectType(TestCase):
 		'''
 		
 		callable_ = Callable(FixtureClassWMethods.class_method)
-		expected_result = Signature.for_method(FixtureClassWMethods, 'class_method').without_first_parameter(), IS_CLASS_METHOD
+		expected_result = Signature.for_method(FixtureClassWMethods, 'class_method').without_first_parameter(), CallableType['CLASS_METHOD']
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 	
 	def test_class_w_instance_method_from_class(self):
@@ -69,7 +68,7 @@ class TestCallableGetSignatureDetectType(TestCase):
 		'''
 		
 		callable_ = Callable(FixtureClassWMethods.bound_method)
-		expected_result = Signature.for_method(FixtureClassWMethods, 'bound_method').without_first_parameter(), IS_INSTANCE_METHOD
+		expected_result = Signature.for_method(FixtureClassWMethods, 'bound_method').without_first_parameter(), CallableType['INSTANCE_METHOD']
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 	
 	def test_class_w_instance_method_from_instance(self):
@@ -79,5 +78,5 @@ class TestCallableGetSignatureDetectType(TestCase):
 		
 		instance_ = FixtureClassWMethods(None)
 		callable_ = Callable(instance_.bound_method)
-		expected_result = Signature.for_method(instance_, 'bound_method').without_first_parameter(), IS_INSTANCE_METHOD
+		expected_result = Signature.for_method(instance_, 'bound_method').without_first_parameter(), CallableType['INSTANCE_METHOD']
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())

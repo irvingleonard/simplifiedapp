@@ -6,18 +6,17 @@ ToDo:
 - Everything
 '''
 
+from enum import Enum
 from importlib import import_module
 from inspect import isclass, ismethod
 from logging import getLogger
+from types import FunctionType, MethodType
 
 from docstring_parser import parse as docstring_parse
 from introspection import BoundArguments, Signature
 from introspection.parameter import ParameterKind
 
 LOGGER = getLogger(__name__)
-
-IS_CLASS, IS_FUNCTION, IS_METHOD, IS_MODULE = 'CLASS', 'FUNCTION', 'METHOD', 'MODULE'
-IS_CLASS_METHOD, IS_INSTANCE_METHOD, IS_STATIC_METHOD = 'CLASS_METHOD', 'INSTANCE_METHOD', 'STATIC_METHOD'
 
 def object_metadata(obj):
 	'''Gets metadata from an object
@@ -92,6 +91,19 @@ def signature_without_first_parameter(self):
 		return self
 Signature.without_first_parameter = signature_without_first_parameter
 
+
+class CallableType(Enum):
+	CLASS = 'CLASS'
+	INSTANCE = 'INSTANCE'
+	FUNCTION = 'FUNCTION'
+	METHOD = 'METHOD'
+	MODULE = 'MODULE'
+	BOUND_METHOD = 'BOUND_METHOD'
+	CLASS_METHOD = 'CLASS_METHOD'
+	INSTANCE_METHOD = 'INSTANCE_METHOD'
+	STATIC_METHOD = 'STATIC_METHOD'
+	
+	
 class Callable:
 	'''
 	
@@ -116,15 +128,15 @@ class Callable:
 		"Call" this callable with the applicable parameters found in "args_w_keys". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
 		'''
 		
-		if self.type == IS_CLASS:
+		if self.type == CallableType['CLASS']:
 			raise NotImplementedError('Instantiating classes')
 			LOGGER.debug('Instantiating class "%s" with: %s & %s', self.name, args, kwargs)
 			result = self._callable_(*args, **kwargs)
-		elif self.type in (IS_FUNCTION, IS_STATIC_METHOD, IS_CLASS_METHOD):
+		elif self.type in (CallableType['FUNCTION'], CallableType['STATIC_METHOD'], CallableType['CLASS_METHOD']):
 			args, kwargs = self.signature.bind(**args_w_keys).to_varargs()
 			LOGGER.debug('Running %s "%s" with: %s & %s', str(self.type).lower(), self.name, args, kwargs)
 			result = self._callable_(*args, **kwargs)
-		elif self.type == IS_INSTANCE_METHOD:
+		elif self.type == CallableType['INSTANCE_METHOD']:
 			raise NotImplementedError('Instance method')
 		else:
 			raise ValueError('Callable type not supported "{}"'.format(self.type))
@@ -135,16 +147,19 @@ class Callable:
 		Wait until they're needed before resolving potentially costly attributes.
 		'''
 		
-		if item == 'metadata':
+		if item == 'is_method':
+			value = ismethod(self._callable_)
+		elif item == 'metadata':
 			value = object_metadata(self._callable_)
 		elif item == 'module':
 			value = import_module(self._callable_.__module__)
 		elif item == 'parents':
 			genealogy = self._callable_.__qualname__.split('.')
-			if len(genealogy) > 1:
+			#AFAIK there's no way to resolve the local context of a function: meaning that there's no way to "resolve" the locally defined function short of running the outer one.
+			if (len(genealogy) > 1) and ('<locals>' not in genealogy):
 				value = [getattr(self.module, genealogy[0])]
 				for parent in genealogy[1:-1]:
-					value.append(getattr(parents[-1], parent))
+					value.append(getattr(value[-1], parent))
 				value.reverse()
 			else:
 				value = []
@@ -164,43 +179,54 @@ class Callable:
 		return value
 	
 	def _get_signature_detect_type(self):
-		'''Detect the type of callable and produce a signature and detect the type
+		'''Detect the type of callable, produce a signature, and signal the type
 		
-		There are at least 5 different possible callables:
-		- run of the mill function, a plain 'ol regular function, returning whatever the function returns
-		- class, which should return an instance of such class
-		- a class method, which takes a "type" as the first argument
-		- an instance method, which takes "self" as the first argument
-		- a static method, which is very similar to the regular function, only that it's a member of the class
-		
-		An instance method could come from an object (an instantiated class) or the class itself: you'd need to instantiate the class first before calling the method.
-		
-		Type could be one of: IS_FUNCTION, IS_CLASS, IS_INSTANCE_METHOD, IS_CLASS_METHOD, IS_STATIC_METHOD
+		There are at least 7 different possible callables:
+		- run of the mill function, a plain 'ol regular function, which would yield the regular signature and an "FUNCTION" type
+		- class, which would combine the signatures of its "__new__" and "__init__" methods and a type of "CLASS"
+		- a class method, where the first parameter is a "type" (called "cls" by regular convention) which will be removed from the signature and a type of "CLASS_METHOD"
+		- a static method, which is very similar to the regular function, only that it's a member of the class, will yield the regular method signature and a type of "STATIC_METHOD"
+		- a class instance supporting the "__call__" protocol, which would yield the signature of its "__call__" method without the first parameter ("self", by convention) and a type of "INSTANCE"
+		- an instance method from a live instance, will yield a method signature without the first parameter ("self" by convention) and a type of "BOUND_METHOD"
+		- an instance method from the original class. Although it's still a callable, it couldn't be executed without creating an instance of the class first. It would yield a method signature without the first parameter ("self" by convention) and a type of "INSTANCE_METHOD"
 		
 		:returns tuple: two items tuple, with the signature in the first position and the type on the second
 		'''
 		
 		if isclass(self._callable_):
 			raise NotImplementedError('Callable being a class')
+			new_signature = Signature.for_method(self._callable_, '__new__')
+			init_signature = Signature.for_method(self._callable_, '__init__')
+			#TODO: merge the new and init signatures
+			type_ = CallableType['CLASS']
+		elif not isinstance(self._callable_, (FunctionType, MethodType)):
+			signature = Signature.for_method(self._callable_, '__call__')
+			signature = signature.without_first_parameter()
+			type_ = CallableType['INSTANCE']
 		elif self.parent is None:
 			signature = Signature.from_callable(self._callable_)
-			type_ = IS_FUNCTION
+			type_ = CallableType['FUNCTION']
+		elif isclass(self.parent):
+			signature = Signature.for_method(self.parent, self.name)
+			type_ = CallableType['STATIC_METHOD']
+			if ismethod(self._callable_):
+				signature = signature.without_first_parameter()
+				type_ = CallableType['CLASS_METHOD']
+			elif signature.parameter_list and (signature.parameter_list[0].name == 'self'):
+				LOGGER.warning('Assuming instance method on a class definition based on the first parameter: "self"')
+				signature = signature.without_first_parameter()
+				type_ = CallableType['INSTANCE_METHOD']
 		else:
 			signature = Signature.for_method(self.parent, self.name)
-			type_ = IS_STATIC_METHOD
-			
-			if isclass(self.parent):
-				if ismethod(self._callable_):
-					signature = signature.without_first_parameter()
-					type_ = IS_CLASS_METHOD
-				elif signature.parameter_list and (signature.parameter_list[0].name == 'self'):
-					LOGGER.warning('Assuming instance method on a class definition based on the first parameter: "self"')
-					signature = signature.without_first_parameter()
-					type_ = IS_INSTANCE_METHOD
+			class_version = getattr(type(self.parent), self.name)
+			if self.is_method and ismethod(class_version):
+				signature = signature.without_first_parameter()
+				type_ = CallableType['CLASS_METHOD']
+			elif self.is_method:
+				signature = signature.without_first_parameter()
+				type_ = CallableType['BOUND_METHOD']
 			else:
-				if ismethod(self._callable_):
-					signature = signature.without_first_parameter()
-					type_ = IS_INSTANCE_METHOD
+				type_ = CallableType['STATIC_METHOD']
 				
 		return signature, type_
 	
