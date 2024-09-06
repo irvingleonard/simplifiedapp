@@ -1,5 +1,6 @@
 #python
-'''
+'''Classes fixtures
+Collection of classes with different parameter and method combinations.
 '''
 
 class FancyStuff:
@@ -259,5 +260,5 @@ class FixtureDeepClassL1:
 			
 			def __init__(self, init_arg):
 				self.init_arg = init_arg
-			def deep_method(self, pos_arg, /, kw_arg):
+			def deep_method(self, pos_arg, /, *, kw_arg):
 				return '-'.join(map(str, (self.init_arg, pos_arg, kw_arg)))

@@ -13,7 +13,7 @@ from logging import getLogger
 from types import FunctionType, MethodType
 
 from docstring_parser import parse as docstring_parse
-from introspection import BoundArguments, Signature
+from introspection import Signature
 from introspection.parameter import ParameterKind
 
 LOGGER = getLogger(__name__)
@@ -71,7 +71,8 @@ def signature_replace(self, *args, **kwargs):
 Signature.replace = signature_replace
 
 def signature_variable_positional_parameter(self):
-	'''
+	'''Variable positional parameter
+	Returns the variable positional parameter or None (read only property)
 	'''
 	for parameter in self.parameter_list:
 		if parameter.kind == ParameterKind.VAR_POSITIONAL:
@@ -80,7 +81,8 @@ def signature_variable_positional_parameter(self):
 Signature.variable_positional_parameter = property(signature_variable_positional_parameter)
 
 def signature_variable_keyword_parameter(self):
-	'''
+	'''Variable keyword parameter
+	Returns the variable keyword parameter or None (read only property)
 	'''
 	for parameter in self.parameter_list:
 		if parameter.kind == ParameterKind.VAR_KEYWORD:
@@ -101,6 +103,9 @@ Signature.without_first_parameter = signature_without_first_parameter
 
 
 class CallableType(Enum):
+	'''Callable types
+	List of callable types identified by the module so far
+	'''
 	CLASS = 'CLASS'
 	INSTANCE = 'INSTANCE'
 	FUNCTION = 'FUNCTION'
@@ -113,15 +118,18 @@ class CallableType(Enum):
 	
 	
 class Callable:
-	'''
-	
+	'''Describe a callable
+	This is mostly about "executing"/"running" the callable. It requires a lot of processing based on all the possible "things" that are callables.
 	'''
 	
 	FORWARD_METADATA = ('name', 'version', 'description', 'long_description')
 	
 	def __init__(self, callable_):
-		'''
+		'''Magic initialization
+		Check that the provided "callable_" is actually callable and store it.
 		
+		:param callable_: The callable that will be handled by the class
+		:returns None: init shouldn't return anything
 		'''
 		
 		if not callable(callable_):
@@ -134,25 +142,47 @@ class Callable:
 	def __call__(self, *multiple_args_w_keys, **args_w_keys):
 		'''Execute the callable
 		"Call" this callable with the applicable parameters found in "args_w_keys". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
+		
+		:param multiple_args_w_keys: a couple (just 2) positional arguments that should be dicts used only when the callable is an instance method; the first one will be used to instantiate the parent class and the second will be used to execute the actual method
+		:param args_w_keys: The arguments to execute the callable with. For instance methods it can be used for shared arguments; it will be used for the class and the method updated by the dicts in multiple_args_w_keys if provided.
+		:returns Any: the result of "running" this callable with the provided parameters
 		'''
 		
-		if self.type == CallableType['CLASS']:
-			raise NotImplementedError('Instantiating classes')
-			LOGGER.debug('Instantiating class "%s" with: %s & %s', self.name, args, kwargs)
-			result = self._callable_(*args, **kwargs)
-		elif self.type in (CallableType['FUNCTION'], CallableType['STATIC_METHOD'], CallableType['CLASS_METHOD']):
-			args, kwargs = self.signature.bind(**args_w_keys).to_varargs()
-			LOGGER.debug('Running %s "%s" with: %s & %s', str(self.type).lower(), self.name, args, kwargs)
-			result = self._callable_(*args, **kwargs)
-		elif self.type == CallableType['INSTANCE_METHOD']:
-			raise NotImplementedError('Instance method')
-		else:
-			raise ValueError('Callable type not supported "{}"'.format(self.type))
-		return result
+		if self.type == CallableType['INSTANCE_METHOD']:
+			if len(multiple_args_w_keys) == 2:
+				parent_args_w_keys, callable_args_w_keys = multiple_args_w_keys
+				parent_args_w_keys = args_w_keys | parent_args_w_keys
+				callable_args_w_keys = args_w_keys | callable_args_w_keys
+			elif not multiple_args_w_keys:
+				parent_args_w_keys = callable_args_w_keys = args_w_keys
+			else:
+				raise TypeError('Invalid arguments for instance method')
+			
+			parent_args, parent_kwargs = type(self)(self.parent).bind(**parent_args_w_keys)
+			parent_instance = self.parent(*parent_args, **parent_kwargs)
+			
+			callable_args, callable_kwargs = self.bind(**callable_args_w_keys)
+			callable_method = getattr(parent_instance, self.name)
+			return callable_method(*callable_args, **callable_kwargs)
+		
+		elif multiple_args_w_keys:
+			LOGGER.warning('Ignoring positional arguments provided for callable that is not an instance method: %s', multiple_args_w_keys)
+		
+		args, kwargs = self.bind(**args_w_keys)
+		return self._callable_(*args, **kwargs)
 	
 	def __getattr__(self, item):
 		'''Lazy instantiation
 		Wait until they're needed before resolving potentially costly attributes.
+		
+		It will set the attribute to the object so this will only be run at most once for each missing attribute.
+		
+		Some attributes are forwarded to the metadata dict, which are controlled by "self.FORWARD_METADATA".
+		
+		If the attribute request is not found here or forwarded to the metadata, then it's forwarded to the stored "callable"
+		
+		:param str item: The name of the attribute that is missing
+		:returns Any: the value of such attribute
 		'''
 		
 		if item == 'is_method':
@@ -180,9 +210,12 @@ class Callable:
 				value = None
 		elif item in ('signature', 'type'):
 			signature, type_ = self._get_signature_detect_type()
-			setattr(self, 'signature', signature)
-			setattr(self, 'type', type_)
-			value = signature if item == 'signature' else type_
+			if item == 'signature':
+				value = signature
+				setattr(self, 'type', type_)
+			else:
+				value = type_
+				setattr(self, 'signature', signature)
 		elif (item in self.FORWARD_METADATA) and (item in self.metadata):
 			return self.metadata[item]
 		else:
@@ -235,8 +268,13 @@ class Callable:
 	
 	@staticmethod
 	def _signature_for_class(class_):
-		'''
-		# TODO: merge the new and init signatures
+		'''Get the signature for the provided class
+		Instantiating a class requires the execution of two different methods with the very same arguments. The signature for such "call" would be the merger of the signature of both methods.
+		
+		Sadly, although the upstream Signature objects claim that they "support anything callable" they choke when getting the signature of a class that defines both methods (__new__ and __init__).
+		
+		:param class_: The class to get the signature for
+		:returns Signature: the calculated signature for the class
 		'''
 		
 		pos_params, varargs, kw_params, varkw = [], [], [], []
@@ -272,8 +310,14 @@ class Callable:
 		return Signature(parameters=pos_params+varargs+kw_params+varkw, forward_ref_context=class_.__module__)
 	
 	def bind(self, *args, **kwargs):
-		'''
-
+		'''Get the "args" list and the "kwargs" dict for the callable signature
+		Another implementation of bind, sadly, neither "introspection.Signature.bind" nor "inspect.Signature.bind" methods are very helpful for this use case. The "BoundArguments" versions are not completely there either. Instead, wrote the "goal" of all those into this method and called it a day.
+		
+		For parameters that could be passed as positional or keyword this method will always use the positional option, makes things simpler. Missing required parameters will raise a TypeError. Unused arguments will yield logging warnings.
+		
+		:param args: The positional arguments to be used to bind to the signature
+		:param kwargs: The keyword arguments to be used to bind to the signature
+		:returns Any: the value of such attribute
 		'''
 		
 		fixed_args, fixed_kwargs = [], {}
@@ -310,5 +354,5 @@ class Callable:
 		if kwargs:
 			LOGGER.warning('Ignoring unused kwargs: %s', kwargs)
 		
-		return self.signature.bind(*fixed_args, **fixed_kwargs)
+		return tuple(fixed_args), fixed_kwargs
 	
