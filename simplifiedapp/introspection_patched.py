@@ -60,9 +60,18 @@ def object_metadata(obj):
 
 	return metadata
 
+Signature._replace_original = Signature.replace
+def signature_replace(self, *args, **kwargs):
+	'''Enhance upstream replace
+	The original "replace" method doesn't take into account the "forward_ref_context" attribute which means that any signature "replaced" will be an incomplete "introspection.Signature" object.
+	'''
+	result = self._replace_original(*args, **kwargs)
+	result.forward_ref_context = self.forward_ref_context
+	return result
+Signature.replace = signature_replace
+
 def signature_variable_positional_parameter(self):
 	'''
-	
 	'''
 	for parameter in self.parameter_list:
 		if parameter.kind == ParameterKind.VAR_POSITIONAL:
@@ -72,7 +81,6 @@ Signature.variable_positional_parameter = property(signature_variable_positional
 
 def signature_variable_keyword_parameter(self):
 	'''
-
 	'''
 	for parameter in self.parameter_list:
 		if parameter.kind == ParameterKind.VAR_KEYWORD:
@@ -201,10 +209,7 @@ class Callable:
 		'''
 		
 		if isclass(self._callable_):
-			raise NotImplementedError('Callable being a class')
-			new_signature = Signature.for_method(self._callable_, '__new__')
-			init_signature = Signature.for_method(self._callable_, '__init__')
-			#TODO: merge the new and init signatures
+			signature = self._signature_for_class(self._callable_)
 			type_ = CallableType['CLASS']
 		elif not isinstance(self._callable_, (FunctionType, MethodType)):
 			signature = Signature.from_callable(self._callable_.__call__)
@@ -231,10 +236,41 @@ class Callable:
 	@staticmethod
 	def _signature_for_class(class_):
 		'''
-
+		# TODO: merge the new and init signatures
 		'''
 		
-		pass
+		pos_params, varargs, kw_params, varkw = [], [], [], []
+		new_method = getattr(class_, '__new__')
+		if new_method is not object.__new__:
+			new_signature = Signature.from_callable(new_method).without_first_parameter()
+			for parameter in new_signature.parameter_list:
+				if parameter.kind in (ParameterKind.POSITIONAL_ONLY, ParameterKind.POSITIONAL_OR_KEYWORD):
+					pos_params.append(parameter)
+				elif parameter.kind == ParameterKind.KEYWORD_ONLY:
+					kw_params.append(parameter)
+			new_varargs, new_varkw = new_signature.variable_positional_parameter, new_signature.variable_keyword_parameter
+			if new_varargs is not None:
+				varargs = [new_varargs]
+			if new_varkw is not None:
+				varkw = [new_varkw]
+		
+		init_method = getattr(class_, '__init__')
+		if init_method is not object.__init__:
+			init_signature = Signature.from_callable(init_method).without_first_parameter()
+			for parameter in init_signature.parameter_list:
+				if (parameter.kind in (ParameterKind.POSITIONAL_ONLY, ParameterKind.POSITIONAL_OR_KEYWORD)) and (parameter not in pos_params):
+					pos_params.append(parameter)
+				elif (parameter.kind == ParameterKind.KEYWORD_ONLY) and (parameter not in kw_params):
+					kw_params.append(parameter)
+			if new_method is object.__new__:
+				init_varargs, init_varkw = init_signature.variable_positional_parameter, init_signature.variable_keyword_parameter
+				if init_varargs is not None:
+					varargs = [init_varargs]
+				if init_varkw is not None:
+					varkw = [init_varkw]
+		
+		return Signature(parameters=pos_params+varargs+kw_params+varkw, forward_ref_context=class_.__module__)
+	
 	def bind(self, *args, **kwargs):
 		'''
 

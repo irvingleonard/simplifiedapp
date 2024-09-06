@@ -121,6 +121,13 @@ class FixtureClassWNewAndInit(FancyStuff):
 		
 		self.init_pos = init_pos
 		self.init_kw = init_kw
+	
+	@staticmethod
+	def expected_signature(new_pos, init_pos, /, *args, new_kw, init_kw, **kwargs):
+		'''
+		'''
+		
+		pass
 
 
 class FixtureClassWNewAndInitNVar(FancyStuff):
@@ -142,6 +149,13 @@ class FixtureClassWNewAndInitNVar(FancyStuff):
 		
 		self.init_pos = init_pos
 		self.init_kw = init_kw
+	
+	@staticmethod
+	def expected_signature(foo, /, *, bar):
+		'''
+		'''
+		
+		pass
 
 
 class FixtureClassWNewAndInitVarNew(FancyStuff):
@@ -161,6 +175,13 @@ class FixtureClassWNewAndInitVarNew(FancyStuff):
 		
 		self.init_pos = init_pos
 		self.init_kw = init_kw
+	
+	@staticmethod
+	def expected_signature(foo, /, *args, bar, **kwargs):
+		'''
+		'''
+		
+		pass
 
 
 class FixtureClassWNewAndInitVarInit(FancyStuff):
@@ -177,6 +198,13 @@ class FixtureClassWNewAndInitVarInit(FancyStuff):
 		return result
 	
 	def __init__(self, *args, **kwargs):
+		'''
+		'''
+		
+		pass
+	
+	@staticmethod
+	def expected_signature(foo, /, *, bar):
 		'''
 		'''
 		

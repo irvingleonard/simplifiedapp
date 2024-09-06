@@ -33,13 +33,13 @@ class TestCallableGetSignatureDetectType(TestCase):
 		expected_result = Signature.from_callable(fixture_nested_functions_outer()), CallableType['FUNCTION']
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 	
-	def _test_w_class(self):
+	def test_w_class(self):
 		'''
 		Test "Callable._get_signature_detect_type" with a class
 		'''
 		
 		callable_ = Callable(FixtureClassWNewAndInit)
-		expected_result = Signature.from_callable(FixtureClassWNewAndInit), CallableType['CLASS']
+		expected_result = Signature.from_callable(FixtureClassWNewAndInit.expected_signature), CallableType['CLASS']
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 	
 	def test_w_static_method_from_class(self):
