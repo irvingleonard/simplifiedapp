@@ -21,7 +21,7 @@ class TestEnumerateClassCallables(TestCase):
 		Test "enumerate_object_callables" with a class that implements different kind of methods
 		'''
 		
-		expected_result = ([FixtureClassWMethods.bound_method, FixtureClassWMethods.class_method, FixtureClassWMethods.static_method], [])
+		expected_result = ([FixtureClassWMethods.__call__, FixtureClassWMethods.bound_method, FixtureClassWMethods.class_method, FixtureClassWMethods.static_method], [])
 		self.assertEqual(expected_result, enumerate_object_callables(FixtureClassWMethods))
 	
 	def test_deep_class(self):

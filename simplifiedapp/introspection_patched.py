@@ -164,6 +164,7 @@ class Callable:
 			else:
 				value = []
 		elif item == 'parent':
+			# if hasattr(self._callable_, '__self__')
 			value = self.parents[0] if self.parents else None
 		elif item in ('signature', 'type'):
 			signature, type_ = self._get_signature_detect_type()
@@ -200,8 +201,7 @@ class Callable:
 			#TODO: merge the new and init signatures
 			type_ = CallableType['CLASS']
 		elif not isinstance(self._callable_, (FunctionType, MethodType)):
-			signature = Signature.for_method(self._callable_, '__call__')
-			signature = signature.without_first_parameter()
+			signature = Signature.from_callable(self._callable_.__call__)
 			type_ = CallableType['INSTANCE']
 		elif self.parent is None:
 			signature = Signature.from_callable(self._callable_)
@@ -217,7 +217,7 @@ class Callable:
 				signature = signature.without_first_parameter()
 				type_ = CallableType['INSTANCE_METHOD']
 		else:
-			signature = Signature.for_method(self.parent, self.name)
+			signature = Signature.from_callable(getattr(self.parent, self.name))
 			class_version = getattr(type(self.parent), self.name)
 			if self.is_method and ismethod(class_version):
 				signature = signature.without_first_parameter()
@@ -226,6 +226,7 @@ class Callable:
 				signature = signature.without_first_parameter()
 				type_ = CallableType['BOUND_METHOD']
 			else:
+				print('Signature is: ', signature.parameters)
 				type_ = CallableType['STATIC_METHOD']
 				
 		return signature, type_

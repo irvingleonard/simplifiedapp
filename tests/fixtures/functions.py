@@ -88,3 +88,16 @@ def fixture_function_w_all_parameter_combinations(
 	
 	return ''.join(map(str, data))
 	
+def fixture_nested_functions_outer():
+	'''
+	
+	'''
+	
+	def fixture_nested_functions_inner():
+		'''
+		
+		'''
+		
+		pass
+	
+	return fixture_nested_functions_inner

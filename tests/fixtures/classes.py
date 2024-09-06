@@ -191,6 +191,12 @@ class FixtureClassWMethods(FancyStuff):
 	def __init__(self, init_arg):
 		self.init_arg = init_arg
 	
+	def __call__(self, *args, **kwargs):
+		'''
+		'''
+		
+		return str(args) + str(kwargs)
+	
 	def bound_method(self, pos_arg, /):
 		'''
 		'''
