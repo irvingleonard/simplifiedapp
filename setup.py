@@ -30,6 +30,7 @@ setuptools.setup(
 	keywords = 'cli main setuptools',
 	install_requires = [
 		'docstring_parser',
+		'introspection',
 	],
 	python_requires = '>=3.7',
 	packages = setuptools.find_packages(),
