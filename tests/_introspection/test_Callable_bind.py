@@ -72,79 +72,78 @@ class TestCallableBind(TestCase):
 		expected_result = BoundArguments(callable_.signature, run_input)
 		self.assertEqual(expected_result, callable_.bind(**run_input))
 	
-	def _test_class_w_new_and_init(self):
+	def test_class_w_new_and_init(self):
 		'''
-		Test "EnhancedSignature.bind" with a class that implements __new__ and __init__
+		Test "Callable.bind" with a class that implements __new__ and __init__
 		'''
 		
-		signature_ = Signature.from_callable(FixtureClassWNewAndInit)
-		# signature_ = signature_.without_parameters(0)
-		print('Signature is: ', signature_.parameters)
+		callable_ = Callable(FixtureClassWNewAndInit)
 		args_w_keys = {
 			'new_pos': 'r',
 			'new_kw': 6,
 			'init_pos': 's',
 			'init_kw': 7,
 		}
-		# expected_result = BoundArguments(signature_, args_w_keys)
-		result = signature_.bind(**args_w_keys)
-		print('Args: ', result.signature)
-		self.assertEqual(expected_result, signature_.bind(**args_w_keys))
+		expected_result = BoundArguments(callable_.signature, args_w_keys)
+		self.assertEqual(expected_result, callable_.bind(**args_w_keys))
 	
-	def _test_deep_class(self):
+	def test_deep_class(self):
 		'''
-		Test "execute_callable" with a class that implements __new__ and __init__
+		Test "Callable.bind" with a deep class
 		'''
 		
+		callable_ = Callable(FixtureDeepClassL1.FixtureDeepClassL2.FixtureDeepClassL3)
 		args_w_keys = {
 			'init_arg': 'spam',
 		}
-		expected_result = FixtureDeepClassL1.FixtureDeepClassL2.FixtureDeepClassL3(args_w_keys['init_arg'])
-		self.assertEqual(expected_result, execute_callable(FixtureDeepClassL1.FixtureDeepClassL2.FixtureDeepClassL3, args_w_keys=args_w_keys))
+		expected_result = BoundArguments(callable_.signature, args_w_keys)
+		self.assertEqual(expected_result, callable_.bind(**args_w_keys))
 		
-	def _test_class_w_static_method(self):
+	def test_class_w_static_method(self):
 		'''
-		Test "execute_callable" with a static method
+		Test "Callable.bind" with a static method
 		'''
 		
+		callable_ = Callable(FixtureClassWMethods.static_method)
 		args_w_keys = {
 			'pos_arg': 'method_s',
 		}
-		expected_result = 'static-method_s'
-		self.assertEqual(expected_result, execute_callable(FixtureClassWMethods.static_method, args_w_keys=args_w_keys))
+		expected_result = BoundArguments(callable_.signature, args_w_keys)
+		self.assertEqual(expected_result, callable_.bind(**args_w_keys))
 	
-	def _test_class_w_class_method(self):
+	def test_class_w_class_method(self):
 		'''
-		Test "execute_callable" with a class method
+		Test "Callable.bind" with a class method
 		'''
 		
+		callable_ = Callable(FixtureClassWMethods.class_method)
 		args_w_keys = {
 			'pos_arg': 'method_c',
 		}
-		expected_result = 'ultra-class-method_c'
-		self.assertEqual(expected_result, execute_callable(FixtureClassWMethods.class_method, args_w_keys=args_w_keys))
+		expected_result = BoundArguments(callable_.signature, args_w_keys)
+		self.assertEqual(expected_result, callable_.bind(**args_w_keys))
 	
-	def _test_class_w_bound_method(self):
+	def test_class_w_instance_method(self):
 		'''
-		Test "execute_callable" with a bound method
+		Test "Callable.bind" with an instance method
 		'''
 		
+		callable_ = Callable(FixtureClassWMethods.bound_method)
 		args_w_keys = {
-			'init_arg': 'pre',
 			'pos_arg': 'method_b',
 		}
-		expected_result = 'ultra-pre-bound-method_b'
-		self.assertEqual(expected_result, execute_callable(FixtureClassWMethods.bound_method, args_w_keys=args_w_keys))
+		expected_result = BoundArguments(callable_.signature, args_w_keys)
+		self.assertEqual(expected_result, callable_.bind(**args_w_keys))
 	
-	def _test_deep_class_w_bound_method(self):
+	def test_deep_class_w_instance_method(self):
 		'''
-		Test "execute_callable" with a bound method on a deep class
+		Test "Callable.bind" with an instance method on a deep class
 		'''
 		
+		callable_ = Callable(FixtureDeepClassL1.FixtureDeepClassL2.FixtureDeepClassL3.deep_method)
 		args_w_keys = {
-			'init_arg': 'pre',
 			'pos_arg': 'deepos',
 			'kw_arg': 'deepkw',
 		}
-		expected_result = 'pre-deepos-deepkw'
-		self.assertEqual(expected_result, execute_callable(FixtureDeepClassL1.FixtureDeepClassL2.FixtureDeepClassL3.deep_method, args_w_keys=args_w_keys))
+		expected_result = BoundArguments(callable_.signature, args_w_keys)
+		self.assertEqual(expected_result, callable_.bind(**args_w_keys))
