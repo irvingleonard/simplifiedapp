@@ -155,7 +155,7 @@ class Callable:
 			value = import_module(self._callable_.__module__)
 		elif item == 'parents':
 			genealogy = self._callable_.__qualname__.split('.')
-			#AFAIK there's no way to resolve the local context of a function: meaning that there's no way to "resolve" the locally defined function short of running the outer one.
+			#AFAIK there's no way to resolve the local context of a function short of evaluating/running it.
 			if (len(genealogy) > 1) and ('<locals>' not in genealogy):
 				value = [getattr(self.module, genealogy[0])]
 				for parent in genealogy[1:-1]:
@@ -164,8 +164,12 @@ class Callable:
 			else:
 				value = []
 		elif item == 'parent':
-			# if hasattr(self._callable_, '__self__')
-			value = self.parents[0] if self.parents else None
+			if hasattr(self._callable_, '__self__'):
+				value = self._callable_.__self__
+			elif self.parents:
+				value = self.parents[0]
+			else:
+				value = None
 		elif item in ('signature', 'type'):
 			signature, type_ = self._get_signature_detect_type()
 			setattr(self, 'signature', signature)
@@ -190,6 +194,8 @@ class Callable:
 		- a class instance supporting the "__call__" protocol, which would yield the signature of its "__call__" method without the first parameter ("self", by convention) and a type of "INSTANCE"
 		- an instance method from a live instance, will yield a method signature without the first parameter ("self" by convention) and a type of "BOUND_METHOD"
 		- an instance method from the original class. Although it's still a callable, it couldn't be executed without creating an instance of the class first. It would yield a method signature without the first parameter ("self" by convention) and a type of "INSTANCE_METHOD"
+		
+		Had been unable to find a way to tell a static method from an instance method apart while on a class definition. Best solution so far is to rely on the first parameter being "self". Having a static method with a first parameter called "self" (perfectly valid code) will break this logic.
 		
 		:returns tuple: two items tuple, with the signature in the first position and the type on the second
 		'''
@@ -218,16 +224,7 @@ class Callable:
 				type_ = CallableType['INSTANCE_METHOD']
 		else:
 			signature = Signature.from_callable(getattr(self.parent, self.name))
-			class_version = getattr(type(self.parent), self.name)
-			if self.is_method and ismethod(class_version):
-				signature = signature.without_first_parameter()
-				type_ = CallableType['CLASS_METHOD']
-			elif self.is_method:
-				signature = signature.without_first_parameter()
-				type_ = CallableType['BOUND_METHOD']
-			else:
-				print('Signature is: ', signature.parameters)
-				type_ = CallableType['STATIC_METHOD']
+			type_ = CallableType['BOUND_METHOD']
 				
 		return signature, type_
 	

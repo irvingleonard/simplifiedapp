@@ -216,6 +216,13 @@ class FixtureClassWMethods(FancyStuff):
 		'''
 		
 		return 'static-' + str(pos_arg)
+	
+	@staticmethod
+	def problematic_static_method(self, second_argument):
+		'''
+		'''
+		
+		raise NotImplementedError('This method would be mis-identified as an instance method')
 
 
 class FixtureDeepClassL1:

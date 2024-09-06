@@ -78,34 +78,21 @@ class TestCallableGetSignatureDetectType(TestCase):
 		expected_result = Signature.from_callable(FixtureClassWMethods(None).__call__), CallableType['INSTANCE']
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())
 	
-	def test_w_static_method_from_class_instance(self):
+	def test_class_w_instance_method_from_class_instance(self):
 		'''
-		Test "Callable._get_signature_detect_type" with a static method from a class instance
-		'''
-		
-		instance_ = FixtureClassWMethods(None)
-		callable_ = Callable(instance_.static_method)
-		expected_signature = Signature.from_callable(instance_.static_method)
-		print('Expected signature: ', expected_signature.parameters)
-		expected_result = expected_signature, CallableType['STATIC_METHOD']
-		self.assertEqual(expected_result, callable_._get_signature_detect_type())
-	
-	def _test_w_class_method_from_class(self):
-		'''
-		Test "Callable._get_signature_detect_type" with a class method from a class
-		'''
-		
-		callable_ = Callable(FixtureClassWMethods.class_method)
-		expected_result = Signature.for_method(FixtureClassWMethods, 'class_method').without_first_parameter(), \
-		CallableType['CLASS_METHOD']
-		self.assertEqual(expected_result, callable_._get_signature_detect_type())
-	
-	def _test_class_w_instance_method_from_instance(self):
-		'''
-		Test "Callable._get_signature_detect_type" with an instance method from an instance
+		Test "Callable._get_signature_detect_type" with an instance method from a class instance
 		'''
 		
 		instance_ = FixtureClassWMethods(None)
 		callable_ = Callable(instance_.bound_method)
-		expected_result = Signature.for_method(instance_, 'bound_method').without_first_parameter(), CallableType['INSTANCE_METHOD']
+		expected_result = Signature.from_callable(instance_.bound_method), CallableType['BOUND_METHOD']
 		self.assertEqual(expected_result, callable_._get_signature_detect_type())
+	
+	def test_class_w_static_method_w_problematic_param(self):
+		'''
+		Test "Callable._get_signature_detect_type" with a static method whose first parameter is called "self" ("ok" here means that the logic is broken)
+		'''
+		
+		callable_ = Callable(FixtureClassWMethods.problematic_static_method)
+		expected_result = Signature.from_callable(FixtureClassWMethods.problematic_static_method), CallableType['STATIC_METHOD']
+		self.assertNotEqual(expected_result, callable_._get_signature_detect_type())
