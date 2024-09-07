@@ -6,14 +6,14 @@ import venv
 MODULE_ARGS_VENV = {
 	(3, 8)	: {
 		None	: {
-			'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-			'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
+			'description'	: 'Virtual environment (venv) package for Python. Based on PEP 405.',
+			'epilog'		: 'Copyright (C) 2011-2014 Vinay Sajip.\nLicensed to the PSF under a contributor agreement.'
 			},
 		True: ({'title': 'venv callables'}, {
 			'EnvBuilder'	: (([], {}), {
 				None	: {
-					'description'	: '\n    This class exists to allow virtual environment creation to be',
-					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment."
+					'description'	: 'This class exists to allow virtual environment creation to be',
+					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment.\n\nBy default, the builder makes the system (global) site-packages dir\n*un*available to the created environment.\n\nIf invoked using the Python -m option, the default is to use copying\non Windows platforms but symlinks elsewhere. If instantiated some\nother way, the default is to *not* use symlinks."
 				},
 				False	: {'__simplifiedapp_': (venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None)},
 				True	: ({'title': 'EnvBuilder methods'}, {
@@ -24,15 +24,14 @@ MODULE_ARGS_VENV = {
 					}),
 					'create': (([], {}), {
 						None		: {
-							'description': '\n        Create a virtual environment in a directory.',
-							'epilog': '\nparam env_dir: The target directory to create an environment in.'
+							'description': 'Create a virtual environment in a directory.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None), ('create', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'create_configuration': (([], {}), {
 						None		: {
-							'description': "\n        Create a configuration file indicating where the environment's Python",
+							'description': "Create a configuration file indicating where the environment's Python",
 							'epilog': 'was copied from, and whether the system site-packages should be made\navailable in the environment.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None), ('create_configuration', ('context',), None, (), None))},
@@ -40,16 +39,15 @@ MODULE_ARGS_VENV = {
 					}),
 					'ensure_directories': (([], {}), {
 						None		: {
-							'description': '\n        Create the directories for the environment.',
-							'epilog': '\neturns a context object which holds paths in the environment,\nor use by subsequent logic.\n'
+							'description': 'Create the directories for the environment.',
+							'epilog': 'Returns a context object which holds paths in the environment,\nfor use by subsequent logic.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None), ('ensure_directories', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'install_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Install scripts into the created environment from a directory.',
-							'epilog'		: "\nparam context: The information for the environment creation request\n               being processed.\nparam path:    Absolute pathname of a directory containing script.\n               Scripts in the 'common' subdirectory of this directory,\n               and those in the directory named for the platform\n               being run on, are installed in the created environment.\n               Placeholder variables are replaced with environment-\n               specific values.\n"
+							'description'	: 'Install scripts into the created environment from a directory.',
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None), ('install_scripts', ('context', 'path'), None, (), None))},
 						'context'	: {},
@@ -57,7 +55,7 @@ MODULE_ARGS_VENV = {
 					}),
 					'post_setup': (([], {}), {
 						None		: {
-							'description': '\n        Hook for post-setup modification of the venv. Subclasses may install',
+							'description': 'Hook for post-setup modification of the venv. Subclasses may install',
 							'epilog': 'additional packages or scripts here, add activation shell scripts, etc.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None), ('post_setup', ('context',), None, (), None))},
@@ -65,8 +63,8 @@ MODULE_ARGS_VENV = {
 					}),
 					'replace_variables': (([], {}), {
 			            None		: {
-							'description'	: '\n        Replace variable placeholders in script text with context-specific',
-							'epilog'		: 'variables.'
+							'description'	: 'Replace variable placeholders in script text with context-specific',
+							'epilog'		: 'variables.\n\nReturn the text passed in , but with variables replaced.'
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None), ('replace_variables', ('text', 'context'), None, (), None))},
 						'context'	: {},
@@ -74,24 +72,22 @@ MODULE_ARGS_VENV = {
 					}),
 					'setup_python': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up a Python executable in the environment.',
-							'epilog'		: '\nparam context: The information for the environment creation request\n               being processed.\n'
+							'description'	: 'Set up a Python executable in the environment.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None), ('setup_python', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'setup_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up scripts into the created environment from a directory.',
-							'epilog'		: "\nhis method installs the default scripts into the environment\neing created. You can prevent the default installation by overriding\nhis method if you really need to, or if you need to specify\n different location for the scripts to install. By default, the\nscripts' directory in the venv package is used as the source of\ncripts to install.\n"
+							'description'	: 'Set up scripts into the created environment from a directory.',
+							'epilog'		: "This method installs the default scripts into the environment\nbeing created. You can prevent the default installation by overriding\nthis method if you really need to, or if you need to specify\na different location for the scripts to install. By default, the\n'scripts' directory in the venv package is used as the source of\nscripts to install."
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None), ('setup_scripts', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'symlink_or_copy': (([], {}), {
 						None						: {
-							'description'	: '\n            Try symlinking a file, and if that fails, fall back to copying.',
-							'epilog'		: '            '
+							'description'	: 'Try symlinking a file, and if that fails, fall back to copying.',
 						},
 						False						: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt'), None, (), None), ('symlink_or_copy', ('src', 'dst', 'relative_symlinks_ok'), None, (), None))},
 						'--relative_symlinks_ok'	: {'action': 'store_true', 'default': False},
@@ -107,7 +103,7 @@ MODULE_ARGS_VENV = {
 				'--with_pip': {'action': 'store_true', 'default': False}
 			}),
 			'create': (([], {}), {
-				None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
+				None						: {'description' : 'Create a virtual environment in a directory.'},
 				False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt'), None, (), None)},
 				'--clear'					: {'action' : 'store_true', 'default' : False},
 				'--prompt'					: {'default' : argparse.SUPPRESS},
@@ -125,14 +121,14 @@ MODULE_ARGS_VENV = {
 	},
 	(3, 9)	: {
 		None	: {
-			'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-			'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
+			'description'	: 'Virtual environment (venv) package for Python. Based on PEP 405.',
+			'epilog'		: 'Copyright (C) 2011-2014 Vinay Sajip.\nLicensed to the PSF under a contributor agreement.'
 			},
 		True: ({'title': 'venv callables'}, {
 			'EnvBuilder'	: (([], {}), {
 				None	: {
-					'description'	: '\n    This class exists to allow virtual environment creation to be',
-					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment."
+					'description'	: 'This class exists to allow virtual environment creation to be',
+					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment.\n\nBy default, the builder makes the system (global) site-packages dir\n*un*available to the created environment.\n\nIf invoked using the Python -m option, the default is to use copying\non Windows platforms but symlinks elsewhere. If instantiated some\nother way, the default is to *not* use symlinks."
 				},
 				False	: {'__simplifiedapp_': (venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
 				True	: ({'title': 'EnvBuilder methods'}, {
@@ -143,15 +139,14 @@ MODULE_ARGS_VENV = {
 					}),
 					'create': (([], {}), {
 						None		: {
-							'description': '\n        Create a virtual environment in a directory.',
-							'epilog': '\nparam env_dir: The target directory to create an environment in.'
+							'description': 'Create a virtual environment in a directory.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('create', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'create_configuration': (([], {}), {
 						None		: {
-							'description': "\n        Create a configuration file indicating where the environment's Python",
+							'description': "Create a configuration file indicating where the environment's Python",
 							'epilog': 'was copied from, and whether the system site-packages should be made\navailable in the environment.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('create_configuration', ('context',), None, (), None))},
@@ -159,16 +154,15 @@ MODULE_ARGS_VENV = {
 					}),
 					'ensure_directories': (([], {}), {
 						None		: {
-							'description': '\n        Create the directories for the environment.',
-							'epilog': '\neturns a context object which holds paths in the environment,\nor use by subsequent logic.\n'
+							'description': 'Create the directories for the environment.',
+							'epilog': 'Returns a context object which holds paths in the environment,\nfor use by subsequent logic.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('ensure_directories', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'install_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Install scripts into the created environment from a directory.',
-							'epilog'		: "\nparam context: The information for the environment creation request\n               being processed.\nparam path:    Absolute pathname of a directory containing script.\n               Scripts in the 'common' subdirectory of this directory,\n               and those in the directory named for the platform\n               being run on, are installed in the created environment.\n               Placeholder variables are replaced with environment-\n               specific values.\n"
+							'description'	: 'Install scripts into the created environment from a directory.',
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('install_scripts', ('context', 'path'), None, (), None))},
 						'context'	: {},
@@ -176,7 +170,7 @@ MODULE_ARGS_VENV = {
 					}),
 					'post_setup': (([], {}), {
 						None		: {
-							'description': '\n        Hook for post-setup modification of the venv. Subclasses may install',
+							'description': 'Hook for post-setup modification of the venv. Subclasses may install',
 							'epilog': 'additional packages or scripts here, add activation shell scripts, etc.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('post_setup', ('context',), None, (), None))},
@@ -184,8 +178,8 @@ MODULE_ARGS_VENV = {
 					}),
 					'replace_variables': (([], {}), {
 			            None		: {
-							'description'	: '\n        Replace variable placeholders in script text with context-specific',
-							'epilog'		: 'variables.'
+							'description'	: 'Replace variable placeholders in script text with context-specific',
+							'epilog'		: 'variables.\n\nReturn the text passed in , but with variables replaced.'
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('replace_variables', ('text', 'context'), None, (), None))},
 						'context'	: {},
@@ -193,24 +187,22 @@ MODULE_ARGS_VENV = {
 					}),
 					'setup_python': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up a Python executable in the environment.',
-							'epilog'		: '\nparam context: The information for the environment creation request\n               being processed.\n'
+							'description'	: 'Set up a Python executable in the environment.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('setup_python', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'setup_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up scripts into the created environment from a directory.',
-							'epilog'		: "\nhis method installs the default scripts into the environment\neing created. You can prevent the default installation by overriding\nhis method if you really need to, or if you need to specify\n different location for the scripts to install. By default, the\nscripts' directory in the venv package is used as the source of\ncripts to install.\n"
+							'description'	: 'Set up scripts into the created environment from a directory.',
+							'epilog'		: "This method installs the default scripts into the environment\nbeing created. You can prevent the default installation by overriding\nthis method if you really need to, or if you need to specify\na different location for the scripts to install. By default, the\n'scripts' directory in the venv package is used as the source of\nscripts to install."
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('setup_scripts', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'symlink_or_copy': (([], {}), {
 						None						: {
-							'description'	: '\n            Try symlinking a file, and if that fails, fall back to copying.',
-							'epilog'		: '            '
+							'description'	: 'Try symlinking a file, and if that fails, fall back to copying.',
 						},
 						False						: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('symlink_or_copy', ('src', 'dst', 'relative_symlinks_ok'), None, (), None))},
 						'--relative_symlinks_ok'	: {'action': 'store_true', 'default': False},
@@ -232,7 +224,7 @@ MODULE_ARGS_VENV = {
 				'--with_pip': {'action': 'store_true', 'default': False}
 			}),
 			'create': (([], {}), {
-				None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
+				None						: {'description' : 'Create a virtual environment in a directory.'},
 				False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
 				'--clear'					: {'action' : 'store_true', 'default' : False},
 				'--prompt'					: {'default' : argparse.SUPPRESS},
@@ -251,14 +243,14 @@ MODULE_ARGS_VENV = {
 	},
     (3, 10)	: {
 		None	: {
-			'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-			'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
+			'description'	: 'Virtual environment (venv) package for Python. Based on PEP 405.',
+			'epilog'		: 'Copyright (C) 2011-2014 Vinay Sajip.\nLicensed to the PSF under a contributor agreement.'
 			},
 		True: ({'title': 'venv callables'}, {
 			'EnvBuilder'	: (([], {}), {
 				None	: {
-					'description'	: '\n    This class exists to allow virtual environment creation to be',
-					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment."
+					'description'	: 'This class exists to allow virtual environment creation to be',
+					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment.\n\nBy default, the builder makes the system (global) site-packages dir\n*un*available to the created environment.\n\nIf invoked using the Python -m option, the default is to use copying\non Windows platforms but symlinks elsewhere. If instantiated some\nother way, the default is to *not* use symlinks."
 				},
 				False	: {'__simplifiedapp_': (venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
 				True	: ({'title': 'EnvBuilder methods'}, {
@@ -269,15 +261,14 @@ MODULE_ARGS_VENV = {
 					}),
 					'create': (([], {}), {
 						None		: {
-							'description': '\n        Create a virtual environment in a directory.',
-							'epilog': '\nparam env_dir: The target directory to create an environment in.'
+							'description': 'Create a virtual environment in a directory.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('create', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'create_configuration': (([], {}), {
 						None		: {
-							'description': "\n        Create a configuration file indicating where the environment's Python",
+							'description': "Create a configuration file indicating where the environment's Python",
 							'epilog': 'was copied from, and whether the system site-packages should be made\navailable in the environment.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('create_configuration', ('context',), None, (), None))},
@@ -285,16 +276,15 @@ MODULE_ARGS_VENV = {
 					}),
 					'ensure_directories': (([], {}), {
 						None		: {
-							'description': '\n        Create the directories for the environment.',
-							'epilog': '\neturns a context object which holds paths in the environment,\nor use by subsequent logic.\n'
+							'description': 'Create the directories for the environment.',
+							'epilog': 'Returns a context object which holds paths in the environment,\nfor use by subsequent logic.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('ensure_directories', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'install_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Install scripts into the created environment from a directory.',
-							'epilog'		: "\nparam context: The information for the environment creation request\n               being processed.\nparam path:    Absolute pathname of a directory containing script.\n               Scripts in the 'common' subdirectory of this directory,\n               and those in the directory named for the platform\n               being run on, are installed in the created environment.\n               Placeholder variables are replaced with environment-\n               specific values.\n"
+							'description'	: 'Install scripts into the created environment from a directory.',
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('install_scripts', ('context', 'path'), None, (), None))},
 						'context'	: {},
@@ -302,7 +292,7 @@ MODULE_ARGS_VENV = {
 					}),
 					'post_setup': (([], {}), {
 						None		: {
-							'description': '\n        Hook for post-setup modification of the venv. Subclasses may install',
+							'description': 'Hook for post-setup modification of the venv. Subclasses may install',
 							'epilog': 'additional packages or scripts here, add activation shell scripts, etc.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('post_setup', ('context',), None, (), None))},
@@ -310,8 +300,8 @@ MODULE_ARGS_VENV = {
 					}),
 					'replace_variables': (([], {}), {
 			            None		: {
-							'description'	: '\n        Replace variable placeholders in script text with context-specific',
-							'epilog'		: 'variables.'
+							'description'	: 'Replace variable placeholders in script text with context-specific',
+							'epilog'		: 'variables.\n\nReturn the text passed in , but with variables replaced.'
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('replace_variables', ('text', 'context'), None, (), None))},
 						'context'	: {},
@@ -319,24 +309,22 @@ MODULE_ARGS_VENV = {
 					}),
 					'setup_python': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up a Python executable in the environment.',
-							'epilog'		: '\nparam context: The information for the environment creation request\n               being processed.\n'
+							'description'	: 'Set up a Python executable in the environment.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('setup_python', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'setup_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up scripts into the created environment from a directory.',
-							'epilog'		: "\nhis method installs the default scripts into the environment\neing created. You can prevent the default installation by overriding\nhis method if you really need to, or if you need to specify\n different location for the scripts to install. By default, the\nscripts' directory in the venv package is used as the source of\ncripts to install.\n"
+							'description'	: 'Set up scripts into the created environment from a directory.',
+							'epilog'		: "This method installs the default scripts into the environment\nbeing created. You can prevent the default installation by overriding\nthis method if you really need to, or if you need to specify\na different location for the scripts to install. By default, the\n'scripts' directory in the venv package is used as the source of\nscripts to install."
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('setup_scripts', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'symlink_or_copy': (([], {}), {
 						None						: {
-							'description'	: '\n            Try symlinking a file, and if that fails, fall back to copying.',
-							'epilog'		: '            '
+							'description'	: 'Try symlinking a file, and if that fails, fall back to copying.',
 						},
 						False						: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('symlink_or_copy', ('src', 'dst', 'relative_symlinks_ok'), None, (), None))},
 						'--relative_symlinks_ok'	: {'action': 'store_true', 'default': False},
@@ -358,7 +346,7 @@ MODULE_ARGS_VENV = {
 				'--with_pip': {'action': 'store_true', 'default': False}
 			}),
 			'create': (([], {}), {
-				None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
+				None						: {'description' : 'Create a virtual environment in a directory.'},
 				False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
 				'--clear'					: {'action' : 'store_true', 'default' : False},
 				'--prompt'					: {'default' : argparse.SUPPRESS},
@@ -377,14 +365,14 @@ MODULE_ARGS_VENV = {
 	},
 	(3, 11)	: {
 		None	: {
-			'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-			'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
+			'description'	: 'Virtual environment (venv) package for Python. Based on PEP 405.',
+			'epilog'		: 'Copyright (C) 2011-2014 Vinay Sajip.\nLicensed to the PSF under a contributor agreement.'
 			},
 		True: ({'title': 'venv callables'}, {
 			'EnvBuilder'	: (([], {}), {
 				None	: {
-					'description'	: '\n    This class exists to allow virtual environment creation to be',
-					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment."
+					'description'	: 'This class exists to allow virtual environment creation to be',
+					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment.\n\nBy default, the builder makes the system (global) site-packages dir\n*un*available to the created environment.\n\nIf invoked using the Python -m option, the default is to use copying\non Windows platforms but symlinks elsewhere. If instantiated some\nother way, the default is to *not* use symlinks."
 				},
 				False	: {'__simplifiedapp_': (venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
 				True	: ({'title': 'EnvBuilder methods'}, {
@@ -395,15 +383,14 @@ MODULE_ARGS_VENV = {
 					}),
 					'create': (([], {}), {
 						None		: {
-							'description': '\n        Create a virtual environment in a directory.',
-							'epilog': '\nparam env_dir: The target directory to create an environment in.'
+							'description': 'Create a virtual environment in a directory.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('create', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'create_configuration': (([], {}), {
 						None		: {
-							'description': "\n        Create a configuration file indicating where the environment's Python",
+							'description': "Create a configuration file indicating where the environment's Python",
 							'epilog': 'was copied from, and whether the system site-packages should be made\navailable in the environment.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('create_configuration', ('context',), None, (), None))},
@@ -411,16 +398,15 @@ MODULE_ARGS_VENV = {
 					}),
 					'ensure_directories': (([], {}), {
 						None		: {
-							'description': '\n        Create the directories for the environment.',
-							'epilog': '\neturns a context object which holds paths in the environment,\nor use by subsequent logic.\n'
+							'description': 'Create the directories for the environment.',
+							'epilog': 'Returns a context object which holds paths in the environment,\nfor use by subsequent logic.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('ensure_directories', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'install_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Install scripts into the created environment from a directory.',
-							'epilog'		: "\nparam context: The information for the environment creation request\n               being processed.\nparam path:    Absolute pathname of a directory containing script.\n               Scripts in the 'common' subdirectory of this directory,\n               and those in the directory named for the platform\n               being run on, are installed in the created environment.\n               Placeholder variables are replaced with environment-\n               specific values.\n"
+							'description'	: 'Install scripts into the created environment from a directory.',
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('install_scripts', ('context', 'path'), None, (), None))},
 						'context'	: {},
@@ -428,7 +414,7 @@ MODULE_ARGS_VENV = {
 					}),
 					'post_setup': (([], {}), {
 						None		: {
-							'description': '\n        Hook for post-setup modification of the venv. Subclasses may install',
+							'description': 'Hook for post-setup modification of the venv. Subclasses may install',
 							'epilog': 'additional packages or scripts here, add activation shell scripts, etc.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('post_setup', ('context',), None, (), None))},
@@ -436,8 +422,8 @@ MODULE_ARGS_VENV = {
 					}),
 					'replace_variables': (([], {}), {
 			            None		: {
-							'description'	: '\n        Replace variable placeholders in script text with context-specific',
-							'epilog'		: 'variables.'
+							'description'	: 'Replace variable placeholders in script text with context-specific',
+							'epilog'		: 'variables.\n\nReturn the text passed in , but with variables replaced.'
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('replace_variables', ('text', 'context'), None, (), None))},
 						'context'	: {},
@@ -445,24 +431,22 @@ MODULE_ARGS_VENV = {
 					}),
 					'setup_python': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up a Python executable in the environment.',
-							'epilog'		: '\nparam context: The information for the environment creation request\n               being processed.\n'
+							'description'	: 'Set up a Python executable in the environment.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('setup_python', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'setup_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up scripts into the created environment from a directory.',
-							'epilog'		: "\nhis method installs the default scripts into the environment\neing created. You can prevent the default installation by overriding\nhis method if you really need to, or if you need to specify\n different location for the scripts to install. By default, the\nscripts' directory in the venv package is used as the source of\ncripts to install.\n"
+							'description'	: 'Set up scripts into the created environment from a directory.',
+							'epilog'		: "This method installs the default scripts into the environment\nbeing created. You can prevent the default installation by overriding\nthis method if you really need to, or if you need to specify\na different location for the scripts to install. By default, the\n'scripts' directory in the venv package is used as the source of\nscripts to install."
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('setup_scripts', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'symlink_or_copy': (([], {}), {
 						None						: {
-							'description'	: '\n            Try symlinking a file, and if that fails, fall back to copying.',
-							'epilog'		: '            '
+							'description'	: 'Try symlinking a file, and if that fails, fall back to copying.',
 						},
 						False						: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('symlink_or_copy', ('src', 'dst', 'relative_symlinks_ok'), None, (), None))},
 						'--relative_symlinks_ok'	: {'action': 'store_true', 'default': False},
@@ -484,7 +468,7 @@ MODULE_ARGS_VENV = {
 				'--with_pip': {'action': 'store_true', 'default': False}
 			}),
 			'create': (([], {}), {
-				None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
+				None						: {'description' : 'Create a virtual environment in a directory.'},
 				False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
 				'--clear'					: {'action' : 'store_true', 'default' : False},
 				'--prompt'					: {'default' : argparse.SUPPRESS},
@@ -503,14 +487,14 @@ MODULE_ARGS_VENV = {
 	},
 	(3, 12)	: {
 		None	: {
-			'description'	: '\nVirtual environment (venv) package for Python. Based on PEP 405.',
-			'epilog'		: '\nopyright (C) 2011-2014 Vinay Sajip.\nicensed to the PSF under a contributor agreement.'
+			'description'	: 'Virtual environment (venv) package for Python. Based on PEP 405.',
+			'epilog'		: 'Copyright (C) 2011-2014 Vinay Sajip.\nLicensed to the PSF under a contributor agreement.'
 			},
 		True: ({'title': 'venv callables'}, {
 			'EnvBuilder'	: (([], {}), {
 				None	: {
-					'description'	: '\n    This class exists to allow virtual environment creation to be',
-					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment."
+					'description'	: 'This class exists to allow virtual environment creation to be',
+					'epilog'		: "customized. The constructor parameters determine the builder's\nbehaviour when called upon to create a virtual environment.\n\nBy default, the builder makes the system (global) site-packages dir\n*un*available to the created environment.\n\nIf invoked using the Python -m option, the default is to use copying\non Windows platforms but symlinks elsewhere. If instantiated some\nother way, the default is to *not* use symlinks."
 				},
 				False	: {'__simplifiedapp_': (venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
 				True	: ({'title': 'EnvBuilder methods'}, {
@@ -521,15 +505,14 @@ MODULE_ARGS_VENV = {
 					}),
 					'create': (([], {}), {
 						None		: {
-							'description': '\n        Create a virtual environment in a directory.',
-							'epilog': '\nparam env_dir: The target directory to create an environment in.'
+							'description': 'Create a virtual environment in a directory.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('create', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'create_configuration': (([], {}), {
 						None		: {
-							'description': "\n        Create a configuration file indicating where the environment's Python",
+							'description': "Create a configuration file indicating where the environment's Python",
 							'epilog': 'was copied from, and whether the system site-packages should be made\navailable in the environment.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('create_configuration', ('context',), None, (), None))},
@@ -537,16 +520,15 @@ MODULE_ARGS_VENV = {
 					}),
 					'ensure_directories': (([], {}), {
 						None		: {
-							'description': '\n        Create the directories for the environment.',
-							'epilog': '\neturns a context object which holds paths in the environment,\nor use by subsequent logic.\n'
+							'description': 'Create the directories for the environment.',
+							'epilog': 'Returns a context object which holds paths in the environment,\nfor use by subsequent logic.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('ensure_directories', ('env_dir',), None, (), None))},
 						'env_dir'	: {}
 					}),
 					'install_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Install scripts into the created environment from a directory.',
-							'epilog'		: "\nparam context: The information for the environment creation request\n               being processed.\nparam path:    Absolute pathname of a directory containing script.\n               Scripts in the 'common' subdirectory of this directory,\n               and those in the directory named for the platform\n               being run on, are installed in the created environment.\n               Placeholder variables are replaced with environment-\n               specific values.\n"
+							'description'	: 'Install scripts into the created environment from a directory.',
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('install_scripts', ('context', 'path'), None, (), None))},
 						'context'	: {},
@@ -554,7 +536,7 @@ MODULE_ARGS_VENV = {
 					}),
 					'post_setup': (([], {}), {
 						None		: {
-							'description': '\n        Hook for post-setup modification of the venv. Subclasses may install',
+							'description': 'Hook for post-setup modification of the venv. Subclasses may install',
 							'epilog': 'additional packages or scripts here, add activation shell scripts, etc.'
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('post_setup', ('context',), None, (), None))},
@@ -562,8 +544,8 @@ MODULE_ARGS_VENV = {
 					}),
 					'replace_variables': (([], {}), {
 			            None		: {
-							'description'	: '\n        Replace variable placeholders in script text with context-specific',
-							'epilog'		: 'variables.'
+							'description'	: 'Replace variable placeholders in script text with context-specific',
+							'epilog'		: 'variables.\n\nReturn the text passed in , but with variables replaced.'
 			            },
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('replace_variables', ('text', 'context'), None, (), None))},
 						'context'	: {},
@@ -571,24 +553,22 @@ MODULE_ARGS_VENV = {
 					}),
 					'setup_python': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up a Python executable in the environment.',
-							'epilog'		: '\nparam context: The information for the environment creation request\n               being processed.\n'
+							'description'	: 'Set up a Python executable in the environment.',
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('setup_python', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'setup_scripts': (([], {}), {
 						None		: {
-							'description'	: '\n        Set up scripts into the created environment from a directory.',
-							'epilog'		: "\nhis method installs the default scripts into the environment\neing created. You can prevent the default installation by overriding\nhis method if you really need to, or if you need to specify\n different location for the scripts to install. By default, the\nscripts' directory in the venv package is used as the source of\ncripts to install.\n"
+							'description'	: 'Set up scripts into the created environment from a directory.',
+							'epilog'		: "This method installs the default scripts into the environment\nbeing created. You can prevent the default installation by overriding\nthis method if you really need to, or if you need to specify\na different location for the scripts to install. By default, the\n'scripts' directory in the venv package is used as the source of\nscripts to install."
 						},
 						False		: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('setup_scripts', ('context',), None, (), None))},
 						'context'	: {}
 					}),
 					'symlink_or_copy': (([], {}), {
 						None						: {
-							'description'	: '\n            Try symlinking a file, and if that fails, fall back to copying.',
-							'epilog'		: '            '
+							'description'	: 'Try symlinking a file, and if that fails, fall back to copying.',
 						},
 						False						: {'__simplifiedapp_': ((venv.EnvBuilder, ('system_site_packages', 'clear', 'symlinks', 'upgrade', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None), ('symlink_or_copy', ('src', 'dst', 'relative_symlinks_ok'), None, (), None))},
 						'--relative_symlinks_ok'	: {'action': 'store_true', 'default': False},
@@ -610,7 +590,7 @@ MODULE_ARGS_VENV = {
 				'--with_pip': {'action': 'store_true', 'default': False}
 			}),
 			'create': (([], {}), {
-				None						: {'description' : 'Create a virtual environment in a directory.', 'epilog' : None},
+				None						: {'description' : 'Create a virtual environment in a directory.'},
 				False						: {'__simplifiedapp_' : (getattr(venv, 'create'), ('env_dir', 'system_site_packages', 'clear', 'symlinks', 'with_pip', 'prompt', 'upgrade_deps'), None, (), None)},
 				'--clear'					: {'action' : 'store_true', 'default' : False},
 				'--prompt'					: {'default' : argparse.SUPPRESS},
@@ -649,7 +629,6 @@ CLASS_ARGS_DICT = {
 			'__new__': (([], {}), {
 				None: {
 					'description': 'Create and return a new object.  See help(type) for accurate signature.',
-					'epilog': None
 				},
 				False: {'__simplifiedapp_': (dict.__new__, (), 'args', (), 'kwargs')},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -658,7 +637,6 @@ CLASS_ARGS_DICT = {
 			'clear': (([], {}), {
 				None		: {
 					'description'	: 'D.clear() -> None.  Remove all items from D.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('clear', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action' : 'extend', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
@@ -667,7 +645,6 @@ CLASS_ARGS_DICT = {
 			'copy': (([], {}), {
 				None	: {
 					'description'	: 'D.copy() -> a shallow copy of D',
-					'epilog'		: None
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('copy', (), 'args', (), 'kwargs'))},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -676,7 +653,6 @@ CLASS_ARGS_DICT = {
 			'fromkeys': (([], {}), {
 				None		: {
 					'description'	: 'Create a new dictionary with keys from iterable and values set to value.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict.fromkeys, ('iterable', 'value'), None, (), None))},
 				'--value'	: {'default': argparse.SUPPRESS},
@@ -685,7 +661,6 @@ CLASS_ARGS_DICT = {
 			'get'			: (([], {}), {
 				None		: {
 					'description'	: 'Return the value for key if key is in the dictionary, else default.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('get', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -694,7 +669,6 @@ CLASS_ARGS_DICT = {
 			'items': (([], {}), {
 				None		: {
 					'description'	: 'D.items() -> a set-like object providing a view on D\'s items',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('items', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -703,7 +677,6 @@ CLASS_ARGS_DICT = {
 			'keys': (([], {}), {
 				None		: {
 					'description'	: 'D.keys() -> a set-like object providing a view on D\'s keys',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('keys', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -721,14 +694,14 @@ CLASS_ARGS_DICT = {
 			'popitem'		: (([], {}), {
 				None	: {
 					'description'	: 'Remove and return a (key, value) pair as a 2-tuple.',
-					'epilog'		: '\nairs are returned in LIFO (last-in, first-out) order.\naises KeyError if the dict is empty.'
+					'epilog'		: 'Pairs are returned in LIFO (last-in, first-out) order.\nRaises KeyError if the dict is empty.'
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('popitem', (), None, (), None))}
 			}),
 			'setdefault'	: (([], {}), {
 				None		: {
 					'description'	: 'Insert key with a value of default if key is not in the dictionary.',
-					'epilog'		: '\neturn the value for key if key is in the dictionary, else default.'
+					'epilog'		: 'Return the value for key if key is in the dictionary, else default.'
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('setdefault', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -746,7 +719,6 @@ CLASS_ARGS_DICT = {
 			'values': (([], {}), {
 				None		: {
 					'description'	: 'D.values() -> an object providing a view on D\'s values',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('values', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -775,7 +747,6 @@ CLASS_ARGS_DICT = {
 			'__new__': (([], {}), {
 				None: {
 					'description': 'Create and return a new object.  See help(type) for accurate signature.',
-					'epilog': None
 				},
 				False: {'__simplifiedapp_': (dict.__new__, (), 'args', (), 'kwargs')},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -784,7 +755,6 @@ CLASS_ARGS_DICT = {
 			'clear': (([], {}), {
 				None		: {
 					'description'	: 'D.clear() -> None.  Remove all items from D.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('clear', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action' : 'extend', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
@@ -793,7 +763,6 @@ CLASS_ARGS_DICT = {
 			'copy': (([], {}), {
 				None	: {
 					'description'	: 'D.copy() -> a shallow copy of D',
-					'epilog'		: None
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('copy', (), 'args', (), 'kwargs'))},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -802,7 +771,6 @@ CLASS_ARGS_DICT = {
 			'fromkeys': (([], {}), {
 				None		: {
 					'description'	: 'Create a new dictionary with keys from iterable and values set to value.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict.fromkeys, ('iterable', 'value'), None, (), None))},
 				'--value'	: {'default': argparse.SUPPRESS},
@@ -811,7 +779,6 @@ CLASS_ARGS_DICT = {
 			'get'			: (([], {}), {
 				None		: {
 					'description'	: 'Return the value for key if key is in the dictionary, else default.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('get', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -820,7 +787,6 @@ CLASS_ARGS_DICT = {
 			'items': (([], {}), {
 				None		: {
 					'description'	: 'D.items() -> a set-like object providing a view on D\'s items',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('items', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -829,7 +795,6 @@ CLASS_ARGS_DICT = {
 			'keys': (([], {}), {
 				None		: {
 					'description'	: 'D.keys() -> a set-like object providing a view on D\'s keys',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('keys', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -838,7 +803,7 @@ CLASS_ARGS_DICT = {
 			'pop': (([], {}), {
 				None		: {
 					'description'	: 'D.pop(k[,d]) -> v, remove specified key and return the corresponding value.',
-					'epilog'		: '\nf key is not found, default is returned if given, otherwise KeyError is raised'
+					'epilog'		: 'If key is not found, default is returned if given, otherwise KeyError is raised'
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('pop', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -847,14 +812,14 @@ CLASS_ARGS_DICT = {
 			'popitem'		: (([], {}), {
 				None	: {
 					'description'	: 'Remove and return a (key, value) pair as a 2-tuple.',
-					'epilog'		: '\nairs are returned in LIFO (last-in, first-out) order.\naises KeyError if the dict is empty.'
+					'epilog'		: 'Pairs are returned in LIFO (last-in, first-out) order.\nRaises KeyError if the dict is empty.'
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('popitem', (), None, (), None))}
 			}),
 			'setdefault'	: (([], {}), {
 				None		: {
 					'description'	: 'Insert key with a value of default if key is not in the dictionary.',
-					'epilog'		: '\neturn the value for key if key is in the dictionary, else default.'
+					'epilog'		: 'Return the value for key if key is in the dictionary, else default.'
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('setdefault', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -872,7 +837,6 @@ CLASS_ARGS_DICT = {
 			'values': (([], {}), {
 				None		: {
 					'description'	: 'D.values() -> an object providing a view on D\'s values',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('values', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -901,7 +865,6 @@ CLASS_ARGS_DICT = {
 			'__new__': (([], {}), {
 				None: {
 					'description': 'Create and return a new object.  See help(type) for accurate signature.',
-					'epilog': None
 				},
 				False: {'__simplifiedapp_': (dict.__new__, (), 'args', (), 'kwargs')},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -910,7 +873,6 @@ CLASS_ARGS_DICT = {
 			'clear': (([], {}), {
 				None		: {
 					'description'	: 'D.clear() -> None.  Remove all items from D.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('clear', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action' : 'extend', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
@@ -919,7 +881,6 @@ CLASS_ARGS_DICT = {
 			'copy': (([], {}), {
 				None	: {
 					'description'	: 'D.copy() -> a shallow copy of D',
-					'epilog'		: None
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('copy', (), 'args', (), 'kwargs'))},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -928,7 +889,6 @@ CLASS_ARGS_DICT = {
 			'fromkeys': (([], {}), {
 				None		: {
 					'description'	: 'Create a new dictionary with keys from iterable and values set to value.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict.fromkeys, ('iterable', 'value'), None, (), None))},
 				'--value'	: {'default': argparse.SUPPRESS},
@@ -937,7 +897,6 @@ CLASS_ARGS_DICT = {
 			'get'			: (([], {}), {
 				None		: {
 					'description'	: 'Return the value for key if key is in the dictionary, else default.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('get', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -946,7 +905,6 @@ CLASS_ARGS_DICT = {
 			'items': (([], {}), {
 				None		: {
 					'description'	: 'D.items() -> a set-like object providing a view on D\'s items',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('items', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -955,7 +913,6 @@ CLASS_ARGS_DICT = {
 			'keys': (([], {}), {
 				None		: {
 					'description'	: 'D.keys() -> a set-like object providing a view on D\'s keys',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('keys', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -964,7 +921,7 @@ CLASS_ARGS_DICT = {
 			'pop': (([], {}), {
 				None		: {
 					'description'	: 'D.pop(k[,d]) -> v, remove specified key and return the corresponding value.',
-					'epilog'		: '\nf the key is not found, return the default if given; otherwise,\naise a KeyError.'
+					'epilog'		: 'If the key is not found, return the default if given; otherwise,\nraise a KeyError.'
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('pop', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -973,14 +930,14 @@ CLASS_ARGS_DICT = {
 			'popitem'		: (([], {}), {
 				None	: {
 					'description'	: 'Remove and return a (key, value) pair as a 2-tuple.',
-					'epilog'		: '\nairs are returned in LIFO (last-in, first-out) order.\naises KeyError if the dict is empty.'
+					'epilog'		: 'Pairs are returned in LIFO (last-in, first-out) order.\nRaises KeyError if the dict is empty.'
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('popitem', (), None, (), None))}
 			}),
 			'setdefault'	: (([], {}), {
 				None		: {
 					'description'	: 'Insert key with a value of default if key is not in the dictionary.',
-					'epilog'		: '\neturn the value for key if key is in the dictionary, else default.'
+					'epilog'		: 'Return the value for key if key is in the dictionary, else default.'
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('setdefault', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -998,7 +955,6 @@ CLASS_ARGS_DICT = {
 			'values': (([], {}), {
 				None		: {
 					'description'	: 'D.values() -> an object providing a view on D\'s values',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('values', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1027,7 +983,6 @@ CLASS_ARGS_DICT = {
 			'__new__': (([], {}), {
 				None: {
 					'description': 'Create and return a new object.  See help(type) for accurate signature.',
-					'epilog': None
 				},
 				False: {'__simplifiedapp_': (dict.__new__, (), 'args', (), 'kwargs')},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1036,7 +991,6 @@ CLASS_ARGS_DICT = {
 			'clear': (([], {}), {
 				None		: {
 					'description'	: 'D.clear() -> None.  Remove all items from D.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('clear', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action' : 'extend', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
@@ -1045,7 +999,6 @@ CLASS_ARGS_DICT = {
 			'copy': (([], {}), {
 				None	: {
 					'description'	: 'D.copy() -> a shallow copy of D',
-					'epilog'		: None
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('copy', (), 'args', (), 'kwargs'))},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1054,7 +1007,6 @@ CLASS_ARGS_DICT = {
 			'fromkeys': (([], {}), {
 				None		: {
 					'description'	: 'Create a new dictionary with keys from iterable and values set to value.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict.fromkeys, ('iterable', 'value'), None, (), None))},
 				'--value'	: {'default': argparse.SUPPRESS},
@@ -1063,7 +1015,6 @@ CLASS_ARGS_DICT = {
 			'get'			: (([], {}), {
 				None		: {
 					'description'	: 'Return the value for key if key is in the dictionary, else default.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('get', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -1072,7 +1023,6 @@ CLASS_ARGS_DICT = {
 			'items': (([], {}), {
 				None		: {
 					'description'	: 'D.items() -> a set-like object providing a view on D\'s items',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('items', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1081,7 +1031,6 @@ CLASS_ARGS_DICT = {
 			'keys': (([], {}), {
 				None		: {
 					'description'	: 'D.keys() -> a set-like object providing a view on D\'s keys',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('keys', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1090,7 +1039,7 @@ CLASS_ARGS_DICT = {
 			'pop': (([], {}), {
 				None		: {
 					'description'	: 'D.pop(k[,d]) -> v, remove specified key and return the corresponding value.',
-					'epilog'		: '\nf the key is not found, return the default if given; otherwise,\naise a KeyError.'
+					'epilog'		: 'If the key is not found, return the default if given; otherwise,\nraise a KeyError.'
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('pop', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1099,14 +1048,14 @@ CLASS_ARGS_DICT = {
 			'popitem'		: (([], {}), {
 				None	: {
 					'description'	: 'Remove and return a (key, value) pair as a 2-tuple.',
-					'epilog'		: '\nairs are returned in LIFO (last-in, first-out) order.\naises KeyError if the dict is empty.'
+					'epilog'		: 'Pairs are returned in LIFO (last-in, first-out) order.\nRaises KeyError if the dict is empty.'
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('popitem', (), None, (), None))}
 			}),
 			'setdefault'	: (([], {}), {
 				None		: {
 					'description'	: 'Insert key with a value of default if key is not in the dictionary.',
-					'epilog'		: '\neturn the value for key if key is in the dictionary, else default.'
+					'epilog'		: 'Return the value for key if key is in the dictionary, else default.'
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('setdefault', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -1124,7 +1073,6 @@ CLASS_ARGS_DICT = {
 			'values': (([], {}), {
 				None		: {
 					'description'	: 'D.values() -> an object providing a view on D\'s values',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('values', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1153,7 +1101,6 @@ CLASS_ARGS_DICT = {
 			'__new__': (([], {}), {
 				None: {
 					'description': 'Create and return a new object.  See help(type) for accurate signature.',
-					'epilog': None
 				},
 				False: {'__simplifiedapp_': (dict.__new__, (), 'args', (), 'kwargs')},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1162,7 +1109,6 @@ CLASS_ARGS_DICT = {
 			'clear': (([], {}), {
 				None		: {
 					'description'	: 'D.clear() -> None.  Remove all items from D.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('clear', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action' : 'extend', 'default' : [], 'help' : '(Use the key=value format for each entry)', 'nargs' : '+'},
@@ -1171,7 +1117,6 @@ CLASS_ARGS_DICT = {
 			'copy': (([], {}), {
 				None	: {
 					'description'	: 'D.copy() -> a shallow copy of D',
-					'epilog'		: None
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('copy', (), 'args', (), 'kwargs'))},
 				'--kwargs': {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1180,7 +1125,6 @@ CLASS_ARGS_DICT = {
 			'fromkeys': (([], {}), {
 				None		: {
 					'description'	: 'Create a new dictionary with keys from iterable and values set to value.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict.fromkeys, ('iterable', 'value'), None, (), None))},
 				'--value'	: {'default': argparse.SUPPRESS},
@@ -1189,7 +1133,6 @@ CLASS_ARGS_DICT = {
 			'get'			: (([], {}), {
 				None		: {
 					'description'	: 'Return the value for key if key is in the dictionary, else default.',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('get', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -1198,7 +1141,6 @@ CLASS_ARGS_DICT = {
 			'items': (([], {}), {
 				None		: {
 					'description'	: 'D.items() -> a set-like object providing a view on D\'s items',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('items', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1207,7 +1149,6 @@ CLASS_ARGS_DICT = {
 			'keys': (([], {}), {
 				None		: {
 					'description'	: 'D.keys() -> a set-like object providing a view on D\'s keys',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('keys', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1216,7 +1157,7 @@ CLASS_ARGS_DICT = {
 			'pop': (([], {}), {
 				None		: {
 					'description'	: 'D.pop(k[,d]) -> v, remove specified key and return the corresponding value.',
-					'epilog'		: '\nf the key is not found, return the default if given; otherwise,\naise a KeyError.'
+					'epilog'		: 'If the key is not found, return the default if given; otherwise,\nraise a KeyError.'
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('pop', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},
@@ -1225,14 +1166,14 @@ CLASS_ARGS_DICT = {
 			'popitem'		: (([], {}), {
 				None	: {
 					'description'	: 'Remove and return a (key, value) pair as a 2-tuple.',
-					'epilog'		: '\nairs are returned in LIFO (last-in, first-out) order.\naises KeyError if the dict is empty.'
+					'epilog'		: 'Pairs are returned in LIFO (last-in, first-out) order.\nRaises KeyError if the dict is empty.'
 				},
 				False	: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('popitem', (), None, (), None))}
 			}),
 			'setdefault'	: (([], {}), {
 				None		: {
 					'description'	: 'Insert key with a value of default if key is not in the dictionary.',
-					'epilog'		: '\neturn the value for key if key is in the dictionary, else default.'
+					'epilog'		: 'Return the value for key if key is in the dictionary, else default.'
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('setdefault', ('key', 'default'), None, (), None))},
 				'--default'	: {'default': argparse.SUPPRESS},
@@ -1250,7 +1191,6 @@ CLASS_ARGS_DICT = {
 			'values': (([], {}), {
 				None		: {
 					'description'	: 'D.values() -> an object providing a view on D\'s values',
-					'epilog'		: None
 				},
 				False		: {'__simplifiedapp_': ((dict, (), 'args', (), 'kwargs'), ('values', (), 'args', (), 'kwargs'))},
 				'--kwargs'	: {'action': 'extend', 'default': [], 'help': '(Use the key=value format for each entry)', 'nargs': '+'},

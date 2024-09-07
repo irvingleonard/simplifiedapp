@@ -19,7 +19,9 @@ import re
 import sys
 import types
 
-__version__ = '0.7.2'
+from .introspection_patched import object_metadata, Callable
+
+__version__ = '0.7.3'
 
 # EARLY_DEBUG = True
 
@@ -173,33 +175,6 @@ BUILTIN_ARGPARSE_OPTIONS = {
 	'--input-file'		: {'action' : InputFiles, 'nargs' : 2, 'default' : argparse.SUPPRESS, 'help' : 'read parameters from a file or standard input (using the "-" special name)'},
 	'--json'			: {'action' : 'store_true', 'default' : False, 'help' : 'output a JSON object as a string'},
 }
-
-
-def object_metadata(obj):
-	'''Gets metadata from an object
-	It tries to get some meta information from the provided object
-
-	ToDo: Documentation
-	'''
-	
-	metadata = {'name' : obj.__name__}
-	
-	if hasattr(obj, '__version__'):
-		metadata['version'] = obj.__version__
-		
-	if hasattr(obj, '__doc__') and (obj.__doc__ is not None) and len(obj.__doc__):
-		metadata.update(re.match(DOCSTRING_FORMAT, obj.__doc__).groupdict())
-
-	if ('long_description' in metadata) and (metadata['long_description'] is not None) and len(metadata['long_description']):
-		try:
-			indentation = len(re.match('\A(\s*)\S+.*', metadata['long_description']).groups()[0])
-			metadata['long_description'] = '\n'.join([line[indentation:] for line in metadata['long_description'].splitlines()])
-		except Exception:
-			LOGGER.debug('Current (weak) docstring parsing failed in: %s', metadata['long_description'])
-	
-	# pprint.pprint(metadata)
-	return metadata
-
 
 def param_metadata(arg_name, arg_values, annotations, docstring):
 	'''Extends argument's values
@@ -438,6 +413,29 @@ def build_parser(parser_content, argument_parser = None):
 	
 	return argument_parser
 
+
+def run_call_new(call_, complete_input, parent = None):
+	'''Execute a callable
+	Just forwards the call to the introspection_patched.Callable logic.
+	
+	It doesn't work, though :(
+	'''
+	
+	if len(call_) != 5:
+		raise ValueError('Malformed call tuple')
+	else:
+		LOGGER.debug('Running call with: %s', call_)
+	
+	callable_, pos_args, args_name, kw_args, kwargs_name = call_
+	
+	if isinstance(callable_, str):
+		if parent is None:
+			raise ValueError('A callable "string" requires a parent object')
+		else:
+			callable_ = getattr(parent, callable_)
+	
+	return Callable(callable_)(**complete_input)
+	
 
 def run_call(call_, complete_input, parent = None):
 	'''Execute a callable
