@@ -21,7 +21,7 @@ import types
 
 from .introspection_patched import object_metadata, Callable
 
-__version__ = '0.7.3'
+__version__ = '0.7.4'
 
 # EARLY_DEBUG = True
 
