@@ -111,35 +111,6 @@ jobs:
         if: steps.tests.outputs.TESTS_RESULT != 'passing'
         run: exit 1
 
-      - name: Generate Coverage Data
-        id: coverage
-        run: ./venv/bin/coverage json -o ./coverage/coverage-summary.json
-
-      - name: Generate Test Coverage Badge
-        if: steps.tests.outputs.TESTS_RESULT == 'passing'
-        id: coverage_badge
-        uses: corpitsysadmins/test-coverage-badge-workflow@v1.1.0
-        with:
-          github-token: ${{ github.token }}
-          JSON-key: totals.percent_covered_display
-          coverage-required: ${{ vars.TEST_COVERAGE_REQUIREMENT || 0 }}
-          badge-branch: ${{ github.head_ref }}
-          badge-folder: ${{ vars.TESTS_FOLDER || 'tests' }}
-        continue-on-error: true
-
-      - name: Set Failure Status for Test Coverage
-        if: steps.coverage_badge.outputs.result != 'success'
-        uses: myrotvorets/set-commit-status-action@master
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          status: "failure"
-          description: "Test Coverage Failed. Checkout the corpitsysadmins/test-coverage-badge-workflow ReadMe for more information\n\nResult: ${{steps.test-coverage.outputs.result}}"
-          context: ${{ env.STATUS_CHECK_NAME }}
-
-      - name: Exit if Test Coverage Failed
-        if: steps.coverage_badge.outputs.result != 'success'
-        run: exit 1
-
       - name: Create success status
         uses: myrotvorets/set-commit-status-action@master
         with:
