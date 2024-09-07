@@ -39,7 +39,7 @@ jobs:
       - name: Get Python Package Version
         id: get_package_version
         run: |
-          echo "PACKAGE_VERSION=v"`./venv/bin/python3 -m ${{ vars.PACKAGE_NAME}} --version` >> $GITHUB_OUTPUT
+          echo "PACKAGE_VERSION=v"`./venv/bin/python3 -m ${{ vars.PACKAGE_NAME}} ${{ vars.PACKAGE_NAME}} --version` >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
       - name: Check if Tag is Valid
