@@ -124,7 +124,7 @@ class Callable:
 	
 	FORWARD_METADATA = ('name', 'version', 'description', 'long_description')
 	
-	def __init__(self, callable_):
+	def __init__(self, callable_, warn_extra_args=True):
 		'''Magic initialization
 		Check that the provided "callable_" is actually callable and store it.
 		
@@ -138,6 +138,7 @@ class Callable:
 		super().__init__()
 		
 		self._callable_ = callable_
+		self._warn_extra_args = warn_extra_args
 	
 	def __call__(self, *multiple_args_w_keys, **args_w_keys):
 		'''Execute the callable
@@ -349,10 +350,11 @@ class Callable:
 					fixed_kwargs |= kwargs
 					kwargs = {}
 		
-		if args:
-			LOGGER.warning('Ignoring unused args: %s', args)
-		if kwargs:
-			LOGGER.warning('Ignoring unused kwargs: %s', kwargs)
+		if self._warn_extra_args:
+			if args:
+				LOGGER.warning('Ignoring unused args: %s', args)
+			if kwargs:
+				LOGGER.warning('Ignoring unused kwargs: %s', kwargs)
 		
 		return tuple(fixed_args), fixed_kwargs
 	
