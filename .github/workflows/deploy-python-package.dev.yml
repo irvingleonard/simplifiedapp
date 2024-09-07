@@ -96,12 +96,12 @@ jobs:
 
       - name: Create Virtual Environment & Upgrade PIP
         run: |
-          python3 -m venv venv --system_site_packages
+          python3 -m venv venv --system-site-packages
           ./venv/bin/pip install --upgrade pip
 
       - name: Install Build Modules
         run: |
-          ./venv/bin/pip install build twine
+          ./venv/bin/pip install wheel
 
       - name: Build Package
         run: |
