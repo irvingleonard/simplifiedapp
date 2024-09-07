@@ -101,7 +101,7 @@ jobs:
 
       - name: Install Build Modules
         run: |
-          ./venv/bin/pip install wheel
+          ./venv/bin/pip install wheel setuptools
 
       - name: Build Package
         run: |
