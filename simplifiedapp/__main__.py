@@ -23,4 +23,10 @@ if len(sys.argv) > 1:
 		target = sys.argv[1]
 		sys_argv = sys.argv[2:]
 
-simplifiedapp.main(target = target, sys_argv = sys_argv)
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version', version=simplifiedapp.__version__)
+parser.parse_args()
+
+# simplifiedapp.main(target = target, sys_argv = sys_argv)
