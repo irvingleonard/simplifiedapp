@@ -101,7 +101,11 @@ jobs:
 
       - name: Install Build Modules
         run: |
-          ./venv/bin/pip install wheel setuptools
+          ./venv/bin/pip install --upgrade wheel setuptools
+
+      - name: Install Dependencies
+        run: |
+          ./venv/bin/pip install --upgrade docstring_parser introspection
 
       - name: Build Package
         run: |
