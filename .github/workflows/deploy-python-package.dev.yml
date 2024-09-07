@@ -29,7 +29,7 @@ jobs:
 
       - name: Create Virtual Environment & Upgrade PIP
         run: |
-          python3 -m venv venv --system_site_packages
+          python3 -m venv venv --system-site-packages
           ./venv/bin/pip install --upgrade pip
 
       - name: Install Dependencies
