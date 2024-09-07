@@ -118,6 +118,7 @@ jobs:
         with:
           tag_name: ${{needs.create-tag.outputs.tag}}
           files: dist/*
+          prerelease: true
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
