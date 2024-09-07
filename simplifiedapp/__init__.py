@@ -16,7 +16,7 @@ import sys
 from ._introspection import IS_CLASS, IS_FUNCTION, IS_MODULE, enumerate_object_callables, execute_callable, get_target, object_metadata, parameters_from_class, parameters_from_function
 from . import argparse_patched
 
-__version__ = '0.8.0.dev2'
+__version__ = '0.8.0.dev3'
 
 LOGGER = getLogger(__name__)
 
