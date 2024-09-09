@@ -28,14 +28,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Create Virtual Environment & Upgrade PIP
+      - name: Setup Environment
         run: |
-          python3 -m venv venv --system-site-packages
-          ./venv/bin/pip install --upgrade pip
-
-      - name: Install Dependencies
-        run: |
-          ./venv/bin/pip install --upgrade docstring_parser introspection
+          python3 -m venv venv
+          ./venv/bin/python -m pip install --upgrade pip
+          ./venv/bin/pip install --upgrade devautotools
+          ./venv/bin/python -m devautotools deploy_local_venv
 
       - name: Install Test Coverage Python Modules
         run: |
