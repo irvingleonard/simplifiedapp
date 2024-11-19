@@ -28,7 +28,11 @@ setuptools.setup(
 		'Topic :: Software Development :: Libraries :: Python Modules',
 	],
 	keywords = 'cli main setuptools',
-	python_requires = '>=3.6',
+	install_requires = [
+		'docstring_parser',
+		'introspection',
+	],
+	python_requires = '>=3.9',
 	packages = setuptools.find_packages(),
 	
 	**simplifiedapp.object_metadata(simplifiedapp)
