@@ -118,7 +118,7 @@ class CallableType(Enum):
 	
 	
 class Callable:
-	'''Describe a callable
+	'''Describes a callable
 	This is mostly about "executing"/"running" the callable. It requires a lot of processing based on all the possible "things" that are callables.
 	'''
 	
@@ -217,7 +217,7 @@ class Callable:
 			else:
 				value = type_
 				setattr(self, 'signature', signature)
-		elif (item in self.FORWARD_METADATA) and (item in self.metadata):
+		elif item in self.FORWARD_METADATA:
 			return self.metadata[item]
 		else:
 			return getattr(self._callable_, item)
@@ -335,7 +335,7 @@ class Callable:
 			elif parameter.kind == ParameterKind.VAR_POSITIONAL:
 				if parameter_name in kwargs:
 					fixed_args += kwargs.pop(parameter_name)
-				if args:
+				elif args:
 					fixed_args += args
 					args = []
 			elif parameter.kind == ParameterKind.KEYWORD_ONLY:
