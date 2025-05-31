@@ -106,6 +106,87 @@ def signature_without_first_parameter(self):
 		return self
 Signature.without_first_parameter = signature_without_first_parameter
 
+@classmethod
+def signature_from_class(cls, class_):
+	"""Get the signature for the provided class
+	Instantiating a class requires the execution of two different methods with the very same arguments. The signature for such "call" would be the merger of the signature of both methods.
+
+	Sadly, although the upstream Signature objects claim that they "support anything callable" they choke when getting the signature of a class that defines both methods (__new__ and __init__).
+
+	:param class_: The class to get the signature for
+	:returns Signature: the calculated signature for the class
+	"""
+
+	pos_params, varargs, kw_params, varkw = [], [], [], []
+	model_varargs, model_varkw = Parameter('args', ParameterKind.VAR_POSITIONAL), Parameter('kwargs', ParameterKind.VAR_KEYWORD)
+	new_method = getattr(class_, '__new__')
+	if new_method is not object.__new__:
+		new_signature = Signature.from_callable(new_method).without_first_parameter()
+		for parameter in new_signature.parameter_list:
+			if parameter.kind in (ParameterKind.POSITIONAL_ONLY, ParameterKind.POSITIONAL_OR_KEYWORD):
+				pos_params.append(parameter)
+			elif parameter.kind == ParameterKind.KEYWORD_ONLY:
+				kw_params.append(parameter)
+		new_varargs, new_varkw = new_signature.variable_positional_parameter, new_signature.variable_keyword_parameter
+	else:
+		new_varargs, new_varkw = model_varargs, model_varkw
+
+	init_method = getattr(class_, '__init__')
+	if init_method is not object.__init__:
+		init_signature = Signature.from_callable(init_method).without_first_parameter()
+		for i in range(len(init_signature.parameter_list)):
+			parameter = init_signature.parameter_list[i]
+
+			if parameter.kind == ParameterKind.POSITIONAL_ONLY:
+				if i < len(pos_params):
+					if parameter.name != new_signature.parameter_list[i].name:
+						warn(f'Mismatching {class_.__name__}.__new__ and {class_.__name__}.__init__ positional parameters: {new_signature.parameter_list[i].name} & {parameter.name}', category=SyntaxWarning)
+				elif new_varargs is not None:
+					pos_params.append(parameter)
+				else:
+					raise ValueError(f'Incompatible positional parameter found in {class_.__name__}.__init__: {parameter.name}')
+
+			elif parameter.kind == ParameterKind.POSITIONAL_OR_KEYWORD:
+				if (i < len(pos_params)) and (parameter.name == new_signature.parameter_list[i].name):
+					continue
+				elif (i >= len(pos_params)) and (new_varargs is not None):
+					pos_params.append(parameter)
+				elif new_varkw is not None:
+					kw_params.append(parameter)
+				elif i < len(pos_params):
+					warn(f'Mismatching {class_.__name__}.__new__ and {class_.__name__}.__init__ positional-or-keyword parameters: {new_signature.parameter_list[i].name} & {parameter.name}', category=SyntaxWarning)
+				else:
+					raise ValueError(f'Incompatible positional-or-keyword parameter found in {class_.__name__}.__init__: {parameter.name}')
+
+			elif parameter.kind == ParameterKind.KEYWORD_ONLY:
+				if (new_method is object.__new__) or (new_varkw is not None):
+					kw_params.append(parameter)
+				elif parameter not in kw_params:
+					raise ValueError('Incompatible keyword parameter found in {}.__init__: {}'.format(class_.__name__, parameter.name))
+
+		init_varargs, init_varkw = init_signature.variable_positional_parameter, init_signature.variable_keyword_parameter
+
+	if (new_method is object.__new__) and (init_method is object.__init__):
+		pass
+	elif init_method is object.__init__:
+		if new_varargs is not None:
+			pos_params.append(new_varargs)
+		if new_varkw is not None:
+			kw_params.append(new_varkw)
+	elif new_method is object.__new__:
+		if init_varargs is not None:
+			pos_params.append(init_varargs)
+		if init_varkw is not None:
+			kw_params.append(init_varkw)
+	else:
+		if (new_varargs is not None) and (init_varargs is not None):
+			pos_params.append(model_varargs)
+		if (new_varkw is not None) and (init_varkw is not None):
+			kw_params.append(model_varkw)
+
+	return Signature(parameters=pos_params + kw_params, forward_ref_context=class_.__module__)
+Signature.from_class = signature_from_class
+
 
 class CallableType(Enum):
 	"""Callable types
@@ -245,7 +326,7 @@ class Callable:
 		"""
 		
 		if isclass(self._callable_):
-			signature = self._signature_for_class(self._callable_)
+			signature = Signature.from_class(self._callable_)
 			type_ = CallableType['CLASS']
 		elif not isinstance(self._callable_, (FunctionType, MethodType)):
 			signature = Signature.from_callable(self._callable_.__call__)
@@ -268,86 +349,6 @@ class Callable:
 			type_ = CallableType['BOUND_METHOD']
 				
 		return signature, type_
-	
-	@staticmethod
-	def _signature_for_class(class_):
-		"""Get the signature for the provided class
-		Instantiating a class requires the execution of two different methods with the very same arguments. The signature for such "call" would be the merger of the signature of both methods.
-		
-		Sadly, although the upstream Signature objects claim that they "support anything callable" they choke when getting the signature of a class that defines both methods (__new__ and __init__).
-		
-		:param class_: The class to get the signature for
-		:returns Signature: the calculated signature for the class
-		"""
-		
-		pos_params, varargs, kw_params, varkw = [], [], [], []
-		model_varargs, model_varkw = Parameter('args', ParameterKind.VAR_POSITIONAL), Parameter('kwargs', ParameterKind.VAR_KEYWORD)
-		new_method = getattr(class_, '__new__')
-		if new_method is not object.__new__:
-			new_signature = Signature.from_callable(new_method).without_first_parameter()
-			for parameter in new_signature.parameter_list:
-				if parameter.kind in (ParameterKind.POSITIONAL_ONLY, ParameterKind.POSITIONAL_OR_KEYWORD):
-					pos_params.append(parameter)
-				elif parameter.kind == ParameterKind.KEYWORD_ONLY:
-					kw_params.append(parameter)
-			new_varargs, new_varkw = new_signature.variable_positional_parameter, new_signature.variable_keyword_parameter
-		else:
-			new_varargs, new_varkw = model_varargs, model_varkw
-		
-		init_method = getattr(class_, '__init__')
-		if init_method is not object.__init__:
-			init_signature = Signature.from_callable(init_method).without_first_parameter()
-			for i in range(len(init_signature.parameter_list)):
-				parameter = init_signature.parameter_list[i]
-
-				if parameter.kind == ParameterKind.POSITIONAL_ONLY:
-					if i < len(pos_params):
-						if parameter.name != new_signature.parameter_list[i].name:
-							warn(f'Mismatching {class_.__name__}.__new__ and {class_.__name__}.__init__ positional parameters: {new_signature.parameter_list[i].name} & {parameter.name}', category=SyntaxWarning)
-					elif new_varargs is not None:
-						pos_params.append(parameter)
-					else:
-						raise ValueError(f'Incompatible positional parameter found in {class_.__name__}.__init__: {parameter.name}')
-
-				elif parameter.kind == ParameterKind.POSITIONAL_OR_KEYWORD:
-					if (i < len(pos_params)) and (parameter.name == new_signature.parameter_list[i].name):
-						continue
-					elif (i >= len(pos_params)) and (new_varargs is not None):
-						pos_params.append(parameter)
-					elif new_varkw is not None:
-						kw_params.append(parameter)
-					elif i < len(pos_params):
-						warn(f'Mismatching {class_.__name__}.__new__ and {class_.__name__}.__init__ positional-or-keyword parameters: {new_signature.parameter_list[i].name} & {parameter.name}', category=SyntaxWarning)
-					else:
-						raise ValueError(f'Incompatible positional-or-keyword parameter found in {class_.__name__}.__init__: {parameter.name}')
-
-				elif parameter.kind == ParameterKind.KEYWORD_ONLY:
-					if (new_method is object.__new__) or (new_varkw is not None):
-						kw_params.append(parameter)
-					elif parameter not in kw_params:
-						raise ValueError('Incompatible keyword parameter found in {}.__init__: {}'.format(class_.__name__, parameter.name))
-
-			init_varargs, init_varkw = init_signature.variable_positional_parameter, init_signature.variable_keyword_parameter
-
-		if (new_method is object.__new__) and (init_method is object.__init__):
-			pass
-		elif init_method is object.__init__:
-			if new_varargs is not None:
-				pos_params.append(new_varargs)
-			if new_varkw is not None:
-				kw_params.append(new_varkw)
-		elif new_method is object.__new__:
-			if init_varargs is not None:
-				pos_params.append(init_varargs)
-			if init_varkw is not None:
-				kw_params.append(init_varkw)
-		else:
-			if (new_varargs is not None) and (init_varargs is not None):
-				pos_params.append(model_varargs)
-			if (new_varkw is not None) and (init_varkw is not None):
-				kw_params.append(model_varkw)
-
-		return Signature(parameters=pos_params+kw_params, forward_ref_context=class_.__module__)
 	
 	def bind(self, *args, **kwargs):
 		"""Get the "args" list and the "kwargs" dict for the callable signature
