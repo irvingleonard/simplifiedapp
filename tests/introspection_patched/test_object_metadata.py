@@ -1,28 +1,28 @@
 #python
-'''
-Testing the _introspection.object_metadata function
-'''
+"""
+Testing the introspection_patched.object_metadata function
+"""
 
 from unittest import TestCase
 
-from fixtures import _introspection as fixtures_introspection
+from fixtures import metadata_rich
 from simplifiedapp.introspection_patched import object_metadata
 
 VERSION_REGEXP = r'\d+\.\d+\.\d+(?:\.(dev|post)\d+)?'
 
 class TestObjectMetadata(TestCase):
-	'''
+	"""
 	Tests for the object_metadata function
-	'''
+	"""
 	
 	maxDiff = None
 	
 	def test_documented_function(self):
-		'''
+		"""
 		Testing "object_metadata" with a documented function
-		'''
+		"""
 		
-		metadata = object_metadata(fixtures_introspection.fixture_documented_function)
+		metadata = object_metadata(metadata_rich.fixture_documented_function)
 		
 		expected_value = 'fixture_documented_function'
 		self.assertEqual(expected_value, metadata['name'])
@@ -55,11 +55,11 @@ class TestObjectMetadata(TestCase):
 		self.assertDictEqual(expected_value, metadata['returns'])
 	
 	def test_documented_class(self):
-		'''
+		"""
 		Testing "object_metadata" with a documented class
-		'''
+		"""
 		
-		metadata = object_metadata(fixtures_introspection.FixtureDocumentedClass)
+		metadata = object_metadata(metadata_rich.FixtureDocumentedClass)
 		
 		expected_value = 'FixtureDocumentedClass'
 		self.assertEqual(expected_value, metadata['name'])
@@ -86,13 +86,13 @@ class TestObjectMetadata(TestCase):
 		self.assertDictEqual(expected_value, metadata['returns'])
 	
 	def test_documented_module(self):
-		'''
+		"""
 		Testing "object_metadata" with a documented module
-		'''
+		"""
 
-		metadata = object_metadata(fixtures_introspection)
+		metadata = object_metadata(metadata_rich)
 	
-		expected_value = 'fixtures._introspection'
+		expected_value = 'fixtures.metadata_rich'
 		self.assertEqual(expected_value, metadata['name'])
 	
 		self.assertRegex(metadata['version'], '(?i:{})'.format(VERSION_REGEXP))
@@ -104,9 +104,9 @@ class TestObjectMetadata(TestCase):
 		self.assertEqual(expected_value, metadata['long_description'])
 		
 	def test_undocumented_lambda(self):
-		'''
+		"""
 		Testing "object_metadata" with an undocumented lambda
-		'''
+		"""
 		
 		metadata = object_metadata(lambda x: 'lambda' + str(x))
 		
