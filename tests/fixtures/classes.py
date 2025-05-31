@@ -377,24 +377,28 @@ class FixtureClassWNewAndInitInvalidKeyword(FancyStuff):
 
 class FixtureClassWMethods(FancyStuff):
 	"""
+	Class having all kinds of methods
 	"""
 	
 	class_const = 'ultra'
 
-	def __init__(self, init_arg):
+	def __init__(self, init_arg=None):
 		"""
+		Magic initialization, in case you need to store something.
 		"""
 
 		self.init_arg = init_arg
 	
 	def __call__(self, *args, **kwargs):
 		"""
+		Calling interface, does little.
 		"""
 		
 		return str(args) + str(kwargs)
 	
-	def bound_method(self, pos_arg, /):
+	def regular_method(self, pos_arg, /):
 		"""
+		A simple "regular" method.
 		"""
 		
 		return '-'.join(map(str, (self.class_const, self.init_arg, 'bound', pos_arg)))
@@ -402,6 +406,7 @@ class FixtureClassWMethods(FancyStuff):
 	@classmethod
 	def class_method(cls, pos_arg, /):
 		"""
+		A simple class method.
 		"""
 		
 		return '-'.join(map(str, (cls.class_const, 'class', pos_arg)))
@@ -409,6 +414,7 @@ class FixtureClassWMethods(FancyStuff):
 	@staticmethod
 	def static_method(pos_arg, /):
 		"""
+		A simple static method.
 		"""
 		
 		return 'static-' + str(pos_arg)
@@ -416,6 +422,7 @@ class FixtureClassWMethods(FancyStuff):
 	@staticmethod
 	def problematic_static_method(self, second_argument):
 		"""
+		A static method indistinguishable from a "regular" method.
 		"""
 		
 		raise NotImplementedError('This method would be mis-identified as an instance method')
