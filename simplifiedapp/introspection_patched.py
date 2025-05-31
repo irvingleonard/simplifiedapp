@@ -1,30 +1,35 @@
 #! python
-'''A simple way to run your python code from the CLI
+"""A simple way to run your python code from the CLI
 The module uses introspection to try and expose your code to the command line. It won't work in all cases, it depends on the complexity of your code.
 
 ToDo:
 - Everything
-'''
+"""
 
 from enum import Enum
 from importlib import import_module
 from inspect import isclass, ismethod
 from logging import getLogger
 from types import FunctionType, MethodType
+from warnings import warn
 
-from docstring_parser import parse as docstring_parse
 from introspection import Signature
-from introspection.parameter import ParameterKind
+from introspection.parameter import Parameter, ParameterKind
+
+try:
+	from docstring_parser import parse as docstring_parse
+except ImportError:
+	docstring_parse = None
 
 LOGGER = getLogger(__name__)
 
 def object_metadata(obj):
-	'''Gets metadata from an object
+	"""Gets metadata from an object
 	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring.
 
 	:param obj: The object to build the metadata for
 	:returns dict: dictionary containing metadata details
-	'''
+	"""
 
 	DOCSTRING_PARAM_ATTRS = ('default', 'description', 'is_optional', 'type_name')
 	DOCSTRING_RETURN_ATTRS = ('description', 'is_generator', 'return_name', 'type_name')
@@ -34,7 +39,7 @@ def object_metadata(obj):
 	if hasattr(obj, '__version__'):
 		metadata['version'] = obj.__version__
 
-	if hasattr(obj, '__doc__') and (obj.__doc__ is not None) and len(obj.__doc__):
+	if (docstring_parse is not None) and hasattr(obj, '__doc__') and (obj.__doc__ is not None) and len(obj.__doc__):
 		docstring = (docstring_parse(obj.__doc__))
 		if docstring.short_description:
 			metadata['description'] = docstring.short_description
@@ -62,18 +67,18 @@ def object_metadata(obj):
 
 Signature._replace_original = Signature.replace
 def signature_replace(self, *args, **kwargs):
-	'''Enhance upstream replace
+	"""Enhance upstream replace
 	The original "replace" method doesn't take into account the "forward_ref_context" attribute which means that any signature "replaced" will be an incomplete "introspection.Signature" object.
-	'''
+	"""
 	result = self._replace_original(*args, **kwargs)
 	result.forward_ref_context = self.forward_ref_context
 	return result
 Signature.replace = signature_replace
 
 def signature_variable_positional_parameter(self):
-	'''Variable positional parameter
+	"""Variable positional parameter
 	Returns the variable positional parameter or None (read only property)
-	'''
+	"""
 	for parameter in self.parameter_list:
 		if parameter.kind == ParameterKind.VAR_POSITIONAL:
 			return parameter
@@ -81,9 +86,9 @@ def signature_variable_positional_parameter(self):
 Signature.variable_positional_parameter = property(signature_variable_positional_parameter)
 
 def signature_variable_keyword_parameter(self):
-	'''Variable keyword parameter
+	"""Variable keyword parameter
 	Returns the variable keyword parameter or None (read only property)
-	'''
+	"""
 	for parameter in self.parameter_list:
 		if parameter.kind == ParameterKind.VAR_KEYWORD:
 			return parameter
@@ -91,9 +96,9 @@ def signature_variable_keyword_parameter(self):
 Signature.variable_keyword_parameter = property(signature_variable_keyword_parameter)
 
 def signature_without_first_parameter(self):
-	'''Same signature without the first parameter
+	"""Same signature without the first parameter
 	Basically it should be the same as "Signature.without_parameters(0)" but for whatever reason that doesn't achieve the same result.
-	'''
+	"""
 	if self.parameters:
 		return self.replace(parameters=list(self.parameters.values())[1:])
 	else:
@@ -103,9 +108,10 @@ Signature.without_first_parameter = signature_without_first_parameter
 
 
 class CallableType(Enum):
-	'''Callable types
+	"""Callable types
 	List of callable types identified by the module so far
-	'''
+	"""
+
 	CLASS = 'CLASS'
 	INSTANCE = 'INSTANCE'
 	FUNCTION = 'FUNCTION'
@@ -118,19 +124,19 @@ class CallableType(Enum):
 	
 	
 class Callable:
-	'''Describes a callable
+	"""Describes a callable
 	This is mostly about "executing"/"running" the callable. It requires a lot of processing based on all the possible "things" that are callables.
-	'''
+	"""
 	
 	FORWARD_METADATA = ('name', 'version', 'description', 'long_description')
 	
 	def __init__(self, callable_, warn_extra_args=True):
-		'''Magic initialization
+		"""Magic initialization
 		Check that the provided "callable_" is actually callable and store it.
 		
 		:param callable_: The callable that will be handled by the class
 		:returns None: init shouldn't return anything
-		'''
+		"""
 		
 		if not callable(callable_):
 			raise ValueError('The argument provided "{}" is not a callable'.format(callable_))
@@ -141,13 +147,13 @@ class Callable:
 		self._warn_extra_args = warn_extra_args
 	
 	def __call__(self, *multiple_args_w_keys, **args_w_keys):
-		'''Execute the callable
+		"""Execute the callable
 		"Call" this callable with the applicable parameters found in "args_w_keys". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
 		
 		:param multiple_args_w_keys: a couple (just 2) positional arguments that should be dicts used only when the callable is an instance method; the first one will be used to instantiate the parent class and the second will be used to execute the actual method
 		:param args_w_keys: The arguments to execute the callable with. For instance methods it can be used for shared arguments; it will be used for the class and the method updated by the dicts in multiple_args_w_keys if provided.
 		:returns Any: the result of "running" this callable with the provided parameters
-		'''
+		"""
 		
 		if self.type == CallableType['INSTANCE_METHOD']:
 			if len(multiple_args_w_keys) == 2:
@@ -173,18 +179,14 @@ class Callable:
 		return self._callable_(*args, **kwargs)
 	
 	def __getattr__(self, item):
-		'''Lazy instantiation
-		Wait until they're needed before resolving potentially costly attributes.
+		"""Lazy instantiation
+		Wait until they're needed before resolving potentially costly attributes. It will set the attribute to the object so this will only be run at most once for each missing attribute.
 		
-		It will set the attribute to the object so this will only be run at most once for each missing attribute.
-		
-		Some attributes are forwarded to the metadata dict, which are controlled by "self.FORWARD_METADATA".
-		
-		If the attribute request is not found here or forwarded to the metadata, then it's forwarded to the stored "callable"
+		Some attributes are forwarded to the metadata dict, which are controlled by "self.FORWARD_METADATA". If the attribute request is not found here or forwarded to the metadata, then it's forwarded to the stored "callable"
 		
 		:param str item: The name of the attribute that is missing
 		:returns Any: the value of such attribute
-		'''
+		"""
 		
 		if item == 'is_method':
 			value = ismethod(self._callable_)
@@ -226,10 +228,10 @@ class Callable:
 		return value
 	
 	def _get_signature_detect_type(self):
-		'''Detect the type of callable, produce a signature, and signal the type
+		"""Detect the type of callable, produce a signature, and signal the type
 		
 		There are at least 7 different possible callables:
-		- run of the mill function, a plain 'ol regular function, which would yield the regular signature and an "FUNCTION" type
+		- run of the mill function (a plain 'ol regular function) which would yield the regular signature and a "FUNCTION" type
 		- class, which would combine the signatures of its "__new__" and "__init__" methods and a type of "CLASS"
 		- a class method, where the first parameter is a "type" (called "cls" by regular convention) which will be removed from the signature and a type of "CLASS_METHOD"
 		- a static method, which is very similar to the regular function, only that it's a member of the class, will yield the regular method signature and a type of "STATIC_METHOD"
@@ -240,7 +242,7 @@ class Callable:
 		Had been unable to find a way to tell a static method from an instance method apart while on a class definition. Best solution so far is to rely on the first parameter being "self". Having a static method with a first parameter called "self" (perfectly valid code) will break this logic.
 		
 		:returns tuple: two items tuple, with the signature in the first position and the type on the second
-		'''
+		"""
 		
 		if isclass(self._callable_):
 			signature = self._signature_for_class(self._callable_)
@@ -269,16 +271,17 @@ class Callable:
 	
 	@staticmethod
 	def _signature_for_class(class_):
-		'''Get the signature for the provided class
+		"""Get the signature for the provided class
 		Instantiating a class requires the execution of two different methods with the very same arguments. The signature for such "call" would be the merger of the signature of both methods.
 		
 		Sadly, although the upstream Signature objects claim that they "support anything callable" they choke when getting the signature of a class that defines both methods (__new__ and __init__).
 		
 		:param class_: The class to get the signature for
 		:returns Signature: the calculated signature for the class
-		'''
+		"""
 		
 		pos_params, varargs, kw_params, varkw = [], [], [], []
+		model_varargs, model_varkw = Parameter('args', ParameterKind.VAR_POSITIONAL), Parameter('kwargs', ParameterKind.VAR_KEYWORD)
 		new_method = getattr(class_, '__new__')
 		if new_method is not object.__new__:
 			new_signature = Signature.from_callable(new_method).without_first_parameter()
@@ -288,38 +291,74 @@ class Callable:
 				elif parameter.kind == ParameterKind.KEYWORD_ONLY:
 					kw_params.append(parameter)
 			new_varargs, new_varkw = new_signature.variable_positional_parameter, new_signature.variable_keyword_parameter
-			if new_varargs is not None:
-				varargs = [new_varargs]
-			if new_varkw is not None:
-				varkw = [new_varkw]
+		else:
+			new_varargs, new_varkw = model_varargs, model_varkw
 		
 		init_method = getattr(class_, '__init__')
 		if init_method is not object.__init__:
 			init_signature = Signature.from_callable(init_method).without_first_parameter()
-			for parameter in init_signature.parameter_list:
-				if (parameter.kind in (ParameterKind.POSITIONAL_ONLY, ParameterKind.POSITIONAL_OR_KEYWORD)) and (parameter not in pos_params):
-					pos_params.append(parameter)
-				elif (parameter.kind == ParameterKind.KEYWORD_ONLY) and (parameter not in kw_params):
-					kw_params.append(parameter)
-			if new_method is object.__new__:
-				init_varargs, init_varkw = init_signature.variable_positional_parameter, init_signature.variable_keyword_parameter
-				if init_varargs is not None:
-					varargs = [init_varargs]
-				if init_varkw is not None:
-					varkw = [init_varkw]
-		
-		return Signature(parameters=pos_params+varargs+kw_params+varkw, forward_ref_context=class_.__module__)
+			for i in range(len(init_signature.parameter_list)):
+				parameter = init_signature.parameter_list[i]
+
+				if parameter.kind == ParameterKind.POSITIONAL_ONLY:
+					if i < len(pos_params):
+						if parameter.name != new_signature.parameter_list[i].name:
+							warn(f'Mismatching {class_.__name__}.__new__ and {class_.__name__}.__init__ positional parameters: {new_signature.parameter_list[i].name} & {parameter.name}', category=SyntaxWarning)
+					elif new_varargs is not None:
+						pos_params.append(parameter)
+					else:
+						raise ValueError(f'Incompatible positional parameter found in {class_.__name__}.__init__: {parameter.name}')
+
+				elif parameter.kind == ParameterKind.POSITIONAL_OR_KEYWORD:
+					if (i < len(pos_params)) and (parameter.name == new_signature.parameter_list[i].name):
+						continue
+					elif (i >= len(pos_params)) and (new_varargs is not None):
+						pos_params.append(parameter)
+					elif new_varkw is not None:
+						kw_params.append(parameter)
+					elif i < len(pos_params):
+						warn(f'Mismatching {class_.__name__}.__new__ and {class_.__name__}.__init__ positional-or-keyword parameters: {new_signature.parameter_list[i].name} & {parameter.name}', category=SyntaxWarning)
+					else:
+						raise ValueError(f'Incompatible positional-or-keyword parameter found in {class_.__name__}.__init__: {parameter.name}')
+
+				elif parameter.kind == ParameterKind.KEYWORD_ONLY:
+					if (new_method is object.__new__) or (new_varkw is not None):
+						kw_params.append(parameter)
+					elif parameter not in kw_params:
+						raise ValueError('Incompatible keyword parameter found in {}.__init__: {}'.format(class_.__name__, parameter.name))
+
+			init_varargs, init_varkw = init_signature.variable_positional_parameter, init_signature.variable_keyword_parameter
+
+		if (new_method is object.__new__) and (init_method is object.__init__):
+			pass
+		elif init_method is object.__init__:
+			if new_varargs is not None:
+				pos_params.append(new_varargs)
+			if new_varkw is not None:
+				kw_params.append(new_varkw)
+		elif new_method is object.__new__:
+			if init_varargs is not None:
+				pos_params.append(init_varargs)
+			if init_varkw is not None:
+				kw_params.append(init_varkw)
+		else:
+			if (new_varargs is not None) and (init_varargs is not None):
+				pos_params.append(model_varargs)
+			if (new_varkw is not None) and (init_varkw is not None):
+				kw_params.append(model_varkw)
+
+		return Signature(parameters=pos_params+kw_params, forward_ref_context=class_.__module__)
 	
 	def bind(self, *args, **kwargs):
-		'''Get the "args" list and the "kwargs" dict for the callable signature
+		"""Get the "args" list and the "kwargs" dict for the callable signature
 		Another implementation of bind, sadly, neither "introspection.Signature.bind" nor "inspect.Signature.bind" methods are very helpful for this use case. The "BoundArguments" versions are not completely there either. Instead, wrote the "goal" of all those into this method and called it a day.
 		
 		For parameters that could be passed as positional or keyword this method will always use the positional option, makes things simpler. Missing required parameters will raise a TypeError. Unused arguments will yield logging warnings.
 		
 		:param args: The positional arguments to be used to bind to the signature
 		:param kwargs: The keyword arguments to be used to bind to the signature
-		:returns Any: the value of such attribute
-		'''
+		:returns tuple: args and kwargs ready to be used to execute the callable
+		"""
 		
 		fixed_args, fixed_kwargs = [], {}
 		for parameter_name, parameter in self.signature.parameters.items():
