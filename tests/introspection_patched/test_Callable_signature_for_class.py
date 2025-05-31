@@ -15,7 +15,7 @@ class TestCallableSignatureForClass(TestCase):
 
 	def test_w_empty_class(self):
 		"""
-		Test "Callable._signature_for_class" with an empty class
+		Testing "Callable._signature_for_class" with an empty class
 		"""
 		
 		expected_result = Signature(parameters=[], forward_ref_context=FixtureEmptyClass.__module__)
@@ -23,7 +23,7 @@ class TestCallableSignatureForClass(TestCase):
 
 	def test_class_w_new(self):
 		"""
-		Test "Callable._signature_for_class" with a class having a __new__ method
+		Testing "Callable._signature_for_class" with a class having a __new__ method
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWNew.__new__).without_first_parameter()
@@ -31,7 +31,7 @@ class TestCallableSignatureForClass(TestCase):
 	
 	def test_class_w_new_varargs(self):
 		"""
-		Test "Callable._signature_for_class" with a class having a __new__ method that accepts varargs parameter
+		Testing "Callable._signature_for_class" with a class having a __new__ method that accepts varargs parameter
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWNewVarargs.__new__).without_first_parameter()
@@ -39,7 +39,7 @@ class TestCallableSignatureForClass(TestCase):
 	
 	def test_class_w_new_varkw(self):
 		"""
-		Test "Callable._signature_for_class" with a class having a __new__ method that accepts varkw parameter
+		Testing "Callable._signature_for_class" with a class having a __new__ method that accepts varkw parameter
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWNewVarkw.__new__).without_first_parameter()
@@ -47,7 +47,7 @@ class TestCallableSignatureForClass(TestCase):
 		
 	def test_class_w_init(self):
 		"""
-		Test "Callable._signature_for_class" with a class having a __init__ method
+		Testing "Callable._signature_for_class" with a class having a __init__ method
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWInit.__init__).without_first_parameter()
@@ -55,7 +55,7 @@ class TestCallableSignatureForClass(TestCase):
 	
 	def test_class_w_init_varargs(self):
 		"""
-		Test "Callable._signature_for_class" with a class having a __init__ method that accepts varargs parameter
+		Testing "Callable._signature_for_class" with a class having a __init__ method that accepts varargs parameter
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWInitVarargs.__init__).without_first_parameter()
@@ -63,7 +63,7 @@ class TestCallableSignatureForClass(TestCase):
 	
 	def test_class_w_init_varkw(self):
 		"""
-		Test "Callable._signature_for_class" with a class having a __init__ method that accepts varkw parameter
+		Testing "Callable._signature_for_class" with a class having a __init__ method that accepts varkw parameter
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWInitVarkw.__init__).without_first_parameter()
@@ -71,7 +71,7 @@ class TestCallableSignatureForClass(TestCase):
 
 	def test_class_w_new_n_init_complex(self):
 		"""
-		Test "Callable._signature_for_class" with a class having __new__ and __init__ methods with a complex combination of parameters
+		Testing "Callable._signature_for_class" with a class having __new__ and __init__ methods with a complex combination of parameters
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWNewAndInitComplex.expected_signature)
@@ -79,7 +79,7 @@ class TestCallableSignatureForClass(TestCase):
 
 	def test_class_w_new_n_init_matching(self):
 		"""
-		Test "Callable._signature_for_class" with a class having __new__ and __init__ methods that accepts exactly the same parameters
+		Testing "Callable._signature_for_class" with a class having __new__ and __init__ methods that accepts exactly the same parameters
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWNewAndInitMatching.expected_signature)
@@ -87,7 +87,7 @@ class TestCallableSignatureForClass(TestCase):
 
 	def test_class_w_new_n_init_mismatch_positional(self):
 		"""
-		Test "Callable._signature_for_class" with a class having __new__ and __init__ methods with a mismatching combination of positional parameters
+		Testing "Callable._signature_for_class" with a class having __new__ and __init__ methods with a mismatching combination of positional parameters
 		"""
 
 		expected_result = Signature.from_callable(FixtureClassWNewAndInitMismatchPositional.expected_signature)
@@ -97,7 +97,7 @@ class TestCallableSignatureForClass(TestCase):
 
 	def test_class_w_new_n_init_mismatch_positional_or_keyword(self):
 		"""
-		Test "Callable._signature_for_class" with a class having __new__ and __init__ methods with a mismatching combination of positional-or-keyword parameters
+		Testing "Callable._signature_for_class" with a class having __new__ and __init__ methods with a mismatching combination of positional-or-keyword parameters
 		"""
 
 		expected_result = Signature.from_callable(FixtureClassWNewAndInitMismatchPositionalOrKeyword.expected_signature)
@@ -107,7 +107,7 @@ class TestCallableSignatureForClass(TestCase):
 
 	def test_class_w_new_n_init_n_flexible_new(self):
 		"""
-		Test "Callable._signature_for_class" with a class having __new__ and __init__ methods with __new__ accepting varargs and varkw parameters
+		Testing "Callable._signature_for_class" with a class having __new__ and __init__ methods with __new__ accepting varargs and varkw parameters
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWNewAndInitFNew.expected_signature)
@@ -115,7 +115,7 @@ class TestCallableSignatureForClass(TestCase):
 	
 	def test_class_w_new_n_init_n_flexible_init(self):
 		"""
-		Test "Callable._signature_for_class" with a class having __new__ and __init__ methods with __init__ accepting varargs and varkw parameters
+		Testing "Callable._signature_for_class" with a class having __new__ and __init__ methods with __init__ accepting varargs and varkw parameters
 		"""
 		
 		expected_result = Signature.from_callable(FixtureClassWNewAndInitFInit.expected_signature)
@@ -123,21 +123,21 @@ class TestCallableSignatureForClass(TestCase):
 
 	def test_class_w_new_n_init_invalid_positional(self):
 		"""
-		Test "Callable._signature_for_class" with a class having __new__ and __init__ methods with an invalid combination of positional parameters
+		Testing "Callable._signature_for_class" with a class having __new__ and __init__ methods with an invalid combination of positional parameters
 		"""
 
 		self.assertRaises(ValueError, Callable._signature_for_class, FixtureClassWNewAndInitInvalidPositional)
 
 	def test_class_w_new_n_init_invalid_positional_or_keyword(self):
 		"""
-		Test "Callable._signature_for_class" with a class having __new__ and __init__ methods with an invalid combination of positional or keyword parameters
+		Testing "Callable._signature_for_class" with a class having __new__ and __init__ methods with an invalid combination of positional or keyword parameters
 		"""
 
 		self.assertRaises(ValueError, Callable._signature_for_class, FixtureClassWNewAndInitInvalidPositionalOrKeyword)
 
 	def test_class_w_new_n_init_invalid_keyword(self):
 		"""
-		Test "Callable._signature_for_class" with a class having __new__ and __init__ methods with an invalid combination of keyword parameters
+		Testing "Callable._signature_for_class" with a class having __new__ and __init__ methods with an invalid combination of keyword parameters
 		"""
 
 		self.assertRaises(ValueError, Callable._signature_for_class, FixtureClassWNewAndInitInvalidKeyword)
