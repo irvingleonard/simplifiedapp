@@ -6,7 +6,7 @@ Testing the introspection_patched.Signature.from_class method
 from unittest import TestCase
 
 from fixtures.classes import *
-from simplifiedapp.introspection_patched import Callable, Signature
+from simplifiedapp.introspection_patched import Signature
 
 class TestCallableSignatureForClass(TestCase):
 	"""
