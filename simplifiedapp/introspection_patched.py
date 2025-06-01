@@ -361,28 +361,30 @@ class Callable:
 		:returns tuple: args and kwargs ready to be used to execute the callable
 		"""
 		
-		fixed_args, fixed_kwargs = [], {}
+		fixed_args, fixed_kwargs, args = [], {}, list(args)
 		for parameter_name, parameter in self.signature.parameters.items():
 			if parameter.kind in (ParameterKind.POSITIONAL_ONLY, ParameterKind.POSITIONAL_OR_KEYWORD):
 				if len(args):
 					fixed_args.append(args.pop(0))
 				elif parameter_name in kwargs:
 					fixed_args.append(kwargs.pop(parameter_name))
-				elif parameter.default == parameter.empty:
+				elif parameter.default is parameter.empty:
 					raise TypeError('Missing required {} parameter "{}"'.format(parameter.kind, parameter_name))
-				elif self.signature.variable_positional_parameter is not None:
+				else:
 					fixed_args.append(parameter.default)
 			elif parameter.kind == ParameterKind.VAR_POSITIONAL:
 				if parameter_name in kwargs:
-					fixed_args += kwargs.pop(parameter_name)
-				elif args:
+					fixed_args += list(kwargs.pop(parameter_name))
+				if args:
 					fixed_args += args
 					args = []
 			elif parameter.kind == ParameterKind.KEYWORD_ONLY:
 				if parameter_name in kwargs:
 					fixed_kwargs[parameter_name] = kwargs.pop(parameter_name)
-				elif parameter.default == parameter.empty:
+				elif parameter.default is parameter.empty:
 					raise TypeError('Missing required keyword only parameter "{}"'.format(parameter_name))
+				else:
+					fixed_kwargs[parameter_name] = parameter.default
 			elif parameter.kind == ParameterKind.VAR_KEYWORD:
 				if parameter_name in kwargs:
 					fixed_kwargs |= kwargs.pop(parameter_name)
@@ -392,9 +394,9 @@ class Callable:
 		
 		if self._warn_extra_args:
 			if args:
-				LOGGER.warning('Ignoring unused args: %s', args)
+				LOGGER.warning('Ignoring unused positional arguments: %s', args)
 			if kwargs:
-				LOGGER.warning('Ignoring unused kwargs: %s', kwargs)
+				LOGGER.warning('Ignoring unused keyword arguments: %s', kwargs)
 		
 		return tuple(fixed_args), fixed_kwargs
 	
