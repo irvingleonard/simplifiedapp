@@ -14,27 +14,51 @@ def fixture_empty_function():
 
 def fixture_function_w_positional_args(a, b, /):
 	"""
+	A function expecting positional parameters
 	"""
+
 	pass
 
-def fixture_function_w_mixed_args(a, b, c, d):
+def fixture_function_w_positional_args_defaults(a=1, b=2, /):
 	"""
+	A function accepting positional parameters
 	"""
+
+	pass
+
+def fixture_function_w_mixed_args(a, b, /, c, *, d):
+	"""
+	A function expecting all kinds of parameters
+	"""
+
 	pass
 
 def fixture_function_w_varargs(*args):
 	"""
+	A function accepting a variable number of positional (or positional-or-keyword) parameters
 	"""
+
 	pass
 
 def fixture_function_w_keyword_args(*, c, d):
 	"""
+	A function expecting keyword parameters
 	"""
+
+	pass
+
+def fixture_function_w_keyword_args_default(*, c=3, d=4):
+	"""
+	A function accepting keyword parameters
+	"""
+
 	pass
 
 def fixture_function_w_varkw(**kwargs):
 	"""
+	A function accepting a variable number of keyword parameters
 	"""
+
 	pass
 
 def fixture_function_w_default_positional_args(a, b=2, /):
@@ -66,7 +90,7 @@ def fixture_function_w_all_parameter_combinations(
 	pos_def_bool=False,
 	/,
 	pos_def_list=['as', 1, True],
-	pos_def_dict={'dct' : 6, 'fer' : False, 1 : 'one'},
+	pos_def_dict={1: 'one', 'dct': 6, 'fer': False},
 	pos_def_num=2.3,
 	*more_pos,
 	kw_req,
