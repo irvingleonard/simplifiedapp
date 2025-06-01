@@ -429,10 +429,30 @@ class FixtureClassWMethods(FancyStuff):
 
 
 class FixtureDeepClassL1:
+	"""
+	Deep class hierarchy. This is level 1.
+	"""
+
 	class FixtureDeepClassL2:
+		"""
+		Deep class hierarchy. This is level 2.
+		"""
+
 		class FixtureDeepClassL3(FancyStuff):
-			
+			"""
+			Deep class hierarchy. This is level 3.
+			"""
+
 			def __init__(self, init_arg):
+				"""
+				Expecting dedicated parameter.
+				"""
+
 				self.init_arg = init_arg
+
 			def deep_method(self, pos_arg, /, *, kw_arg):
+				"""
+				A deep method expecting several parameters.
+				"""
+
 				return '-'.join(map(str, (self.init_arg, pos_arg, kw_arg)))
