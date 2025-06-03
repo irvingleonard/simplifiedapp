@@ -420,7 +420,7 @@ class FixtureClassWMethods(FancyStuff):
 		return 'static-' + str(pos_arg)
 	
 	@staticmethod
-	def problematic_static_method(self, second_argument):
+	def problematic_static_method(self, second_argument, /):
 		"""
 		A static method indistinguishable from a "regular" method.
 		"""
