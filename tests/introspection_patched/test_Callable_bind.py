@@ -254,7 +254,18 @@ class TestCallableBind(TestCase):
 		}
 		expected_result = ('method_b',), {}
 		self.assertEqual(expected_result, Callable(FixtureClassWMethods.regular_method).bind(**args_w_keys))
-	
+
+	def test_class_instance_w_bound_method(self):
+		"""
+		Testing "Callable.bind" with a method bound to an instance
+		"""
+
+		args_w_keys = {
+			'pos_arg': 'method_b',
+		}
+		expected_result = ('method_b',), {}
+		self.assertEqual(expected_result, Callable(FixtureClassWMethods(init_arg='pre').regular_method).bind(**args_w_keys))
+
 	def test_deep_class_w_instance_method(self):
 		"""
 		Testing "Callable.bind" with an instance method on a deep class
