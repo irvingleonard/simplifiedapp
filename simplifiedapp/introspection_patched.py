@@ -65,16 +65,6 @@ def object_metadata(obj):
 
 	return metadata
 
-Signature._replace_original = Signature.replace
-def signature_replace(self, *args, **kwargs):
-	"""Enhance upstream replace
-	The original "replace" method doesn't take into account the "forward_ref_context" attribute which means that any signature "replaced" will be an incomplete "introspection.Signature" object.
-	"""
-	result = self._replace_original(*args, **kwargs)
-	result.forward_ref_context = self.forward_ref_context
-	return result
-Signature.replace = signature_replace
-
 def signature_variable_positional_parameter(self):
 	"""Variable positional parameter
 	Returns the variable positional parameter or None (read only property)
@@ -95,17 +85,6 @@ def signature_variable_keyword_parameter(self):
 	return None
 Signature.variable_keyword_parameter = property(signature_variable_keyword_parameter)
 
-def signature_without_first_parameter(self):
-	"""Same signature without the first parameter
-	Basically it should be the same as "Signature.without_parameters(0)" but for whatever reason that doesn't achieve the same result.
-	"""
-	if self.parameters:
-		return self.replace(parameters=list(self.parameters.values())[1:])
-	else:
-		LOGGER.warning('No parameter to remove')
-		return self
-Signature.without_first_parameter = signature_without_first_parameter
-
 @classmethod
 def signature_from_class(cls, class_):
 	"""Get the signature for the provided class
@@ -117,11 +96,14 @@ def signature_from_class(cls, class_):
 	:returns Signature: the calculated signature for the class
 	"""
 
+	if not isclass(class_):
+		raise ValueError(f'The argument provided "{class_}" is not a class')
+
 	pos_params, varargs, kw_params, varkw = [], [], [], []
 	model_varargs, model_varkw = Parameter('args', ParameterKind.VAR_POSITIONAL), Parameter('kwargs', ParameterKind.VAR_KEYWORD)
 	new_method = getattr(class_, '__new__')
 	if new_method is not object.__new__:
-		new_signature = Signature.from_callable(new_method).without_first_parameter()
+		new_signature = Signature.from_callable(new_method).without_parameters(0)
 		for parameter in new_signature.parameter_list:
 			if parameter.kind in (ParameterKind.POSITIONAL_ONLY, ParameterKind.POSITIONAL_OR_KEYWORD):
 				pos_params.append(parameter)
@@ -133,7 +115,7 @@ def signature_from_class(cls, class_):
 
 	init_method = getattr(class_, '__init__')
 	if init_method is not object.__init__:
-		init_signature = Signature.from_callable(init_method).without_first_parameter()
+		init_signature = Signature.from_callable(init_method).without_parameters(0)
 		for i in range(len(init_signature.parameter_list)):
 			parameter = init_signature.parameter_list[i]
 
@@ -184,7 +166,7 @@ def signature_from_class(cls, class_):
 		if (new_varkw is not None) and (init_varkw is not None):
 			kw_params.append(model_varkw)
 
-	return Signature(parameters=pos_params + kw_params, forward_ref_context=class_.__module__)
+	return Signature(parameters=pos_params+kw_params, forward_ref_context=class_.__module__)
 Signature.from_class = signature_from_class
 
 
@@ -216,6 +198,7 @@ class Callable:
 		Check that the provided "callable_" is actually callable and store it.
 		
 		:param callable_: The callable that will be handled by the class
+		:param bool? warn_extra_args: Enable warnings when binding provided arguments to the callable if there were to be any non-critical mismatch
 		:returns None: init shouldn't return anything
 		"""
 		
@@ -239,7 +222,6 @@ class Callable:
 		"""
 		
 		if self.type == CallableType['INSTANCE_METHOD']:
-			LOGGER.warning('Found INSTANCE_METHOD: %s', self.name)
 			if len(multiple_args_w_keys) == 2:
 				parent_args_w_keys, callable_args_w_keys = multiple_args_w_keys
 				parent_args_w_keys = args_w_keys | parent_args_w_keys
@@ -252,7 +234,6 @@ class Callable:
 			parent_args, parent_kwargs = type(self)(self.parent).bind(**parent_args_w_keys)
 			parent_instance = self.parent(*parent_args, **parent_kwargs)
 			bound_method = getattr(parent_instance, self.name)
-			LOGGER.warning('Calling %s with: %s', bound_method, callable_args_w_keys)
 			return type(self)(bound_method)(**callable_args_w_keys)
 		
 		elif multiple_args_w_keys:
@@ -340,11 +321,11 @@ class Callable:
 			signature = Signature.for_method(self.parent, self.name)
 			type_ = CallableType['STATIC_METHOD']
 			if ismethod(self._callable_):
-				signature = signature.without_first_parameter()
+				signature = signature.without_parameters(0)
 				type_ = CallableType['CLASS_METHOD']
 			elif signature.parameter_list and (signature.parameter_list[0].name == 'self'):
 				LOGGER.warning('Assuming instance method on a class definition based on the first parameter: "self"')
-				signature = signature.without_first_parameter()
+				signature = signature.without_parameters(0)
 				type_ = CallableType['INSTANCE_METHOD']
 		else:
 			signature = Signature.from_callable(getattr(self.parent, self.name))

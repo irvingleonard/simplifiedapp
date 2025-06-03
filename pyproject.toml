@@ -26,7 +26,7 @@ classifiers = [
 	'Topic :: Software Development :: Libraries :: Python Modules',
 ]
 dependencies = [
-	'introspection !=1.9.5, !=1.9.6, !=1.9.7, !=1.9.8, !=1.9.9, !=1.9.10, !=1.9.11, !=1.10.0, !=1.10.1',
+	'introspection>=1.10.2',
 ]
 
 [project.optional-dependencies]
