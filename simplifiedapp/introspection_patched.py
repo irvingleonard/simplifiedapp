@@ -230,6 +230,8 @@ class Callable:
 	def __call__(self, *multiple_args_w_keys, **args_w_keys):
 		"""Execute the callable
 		"Call" this callable with the applicable parameters found in "args_w_keys". The parameters are provided as needed (positionals or as keywords) based on the callable signature.
+
+		It basically leverages "self.bind" to process the provided arguments and calls the "callable" with those. There's also a whole block of logic for "INSTANCE_METHODs" since those require the instantiation of the parent class first; this function's parameters are treated differently in that specific case.
 		
 		:param multiple_args_w_keys: a couple (just 2) positional arguments that should be dicts used only when the callable is an instance method; the first one will be used to instantiate the parent class and the second will be used to execute the actual method
 		:param args_w_keys: The arguments to execute the callable with. For instance methods it can be used for shared arguments; it will be used for the class and the method updated by the dicts in multiple_args_w_keys if provided.
@@ -237,6 +239,7 @@ class Callable:
 		"""
 		
 		if self.type == CallableType['INSTANCE_METHOD']:
+			LOGGER.warning('Found INSTANCE_METHOD: %s', self.name)
 			if len(multiple_args_w_keys) == 2:
 				parent_args_w_keys, callable_args_w_keys = multiple_args_w_keys
 				parent_args_w_keys = args_w_keys | parent_args_w_keys
@@ -248,10 +251,9 @@ class Callable:
 			
 			parent_args, parent_kwargs = type(self)(self.parent).bind(**parent_args_w_keys)
 			parent_instance = self.parent(*parent_args, **parent_kwargs)
-			
-			callable_args, callable_kwargs = self.bind(**callable_args_w_keys)
-			callable_method = getattr(parent_instance, self.name)
-			return callable_method(*callable_args, **callable_kwargs)
+			bound_method = getattr(parent_instance, self.name)
+			LOGGER.warning('Calling %s with: %s', bound_method, callable_args_w_keys)
+			return type(self)(bound_method)(**callable_args_w_keys)
 		
 		elif multiple_args_w_keys:
 			LOGGER.warning('Ignoring positional arguments provided for callable that is not an instance method: %s', multiple_args_w_keys)
