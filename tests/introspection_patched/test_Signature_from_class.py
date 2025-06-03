@@ -13,6 +13,13 @@ class TestCallableSignatureForClass(TestCase):
 	Tests for the Signature.from_class method
 	"""
 
+	def test_w_invlid_class(self):
+		"""
+		Testing "Signature.from_class" with an invalid "class"
+		"""
+
+		self.assertRaises(ValueError, Signature.from_class, lambda: None)
+
 	def test_w_empty_class(self):
 		"""
 		Testing "Signature.from_class" with an empty class
@@ -26,7 +33,7 @@ class TestCallableSignatureForClass(TestCase):
 		Testing "Signature.from_class" with a class having a __new__ method
 		"""
 		
-		expected_result = Signature.from_callable(FixtureClassWNew.__new__).without_first_parameter()
+		expected_result = Signature.from_callable(FixtureClassWNew.__new__).without_parameters(0)
 		self.assertEqual(expected_result, Signature.from_class(FixtureClassWNew))
 	
 	def test_class_w_new_varargs(self):
@@ -34,7 +41,7 @@ class TestCallableSignatureForClass(TestCase):
 		Testing "Signature.from_class" with a class having a __new__ method that accepts varargs parameter
 		"""
 		
-		expected_result = Signature.from_callable(FixtureClassWNewVarargs.__new__).without_first_parameter()
+		expected_result = Signature.from_callable(FixtureClassWNewVarargs.__new__).without_parameters(0)
 		self.assertEqual(expected_result, Signature.from_class(FixtureClassWNewVarargs))
 	
 	def test_class_w_new_varkw(self):
@@ -42,7 +49,7 @@ class TestCallableSignatureForClass(TestCase):
 		Testing "Signature.from_class" with a class having a __new__ method that accepts varkw parameter
 		"""
 		
-		expected_result = Signature.from_callable(FixtureClassWNewVarkw.__new__).without_first_parameter()
+		expected_result = Signature.from_callable(FixtureClassWNewVarkw.__new__).without_parameters(0)
 		self.assertEqual(expected_result, Signature.from_class(FixtureClassWNewVarkw))
 		
 	def test_class_w_init(self):
@@ -50,7 +57,7 @@ class TestCallableSignatureForClass(TestCase):
 		Testing "Signature.from_class" with a class having a __init__ method
 		"""
 		
-		expected_result = Signature.from_callable(FixtureClassWInit.__init__).without_first_parameter()
+		expected_result = Signature.from_callable(FixtureClassWInit.__init__).without_parameters(0)
 		self.assertEqual(expected_result, Signature.from_class(FixtureClassWInit))
 	
 	def test_class_w_init_varargs(self):
@@ -58,7 +65,7 @@ class TestCallableSignatureForClass(TestCase):
 		Testing "Signature.from_class" with a class having a __init__ method that accepts varargs parameter
 		"""
 		
-		expected_result = Signature.from_callable(FixtureClassWInitVarargs.__init__).without_first_parameter()
+		expected_result = Signature.from_callable(FixtureClassWInitVarargs.__init__).without_parameters(0)
 		self.assertEqual(expected_result, Signature.from_class(FixtureClassWInitVarargs))
 	
 	def test_class_w_init_varkw(self):
@@ -66,7 +73,7 @@ class TestCallableSignatureForClass(TestCase):
 		Testing "Signature.from_class" with a class having a __init__ method that accepts varkw parameter
 		"""
 		
-		expected_result = Signature.from_callable(FixtureClassWInitVarkw.__init__).without_first_parameter()
+		expected_result = Signature.from_callable(FixtureClassWInitVarkw.__init__).without_parameters(0)
 		self.assertEqual(expected_result, Signature.from_class(FixtureClassWInitVarkw))
 
 	def test_class_w_new_n_init_complex(self):
