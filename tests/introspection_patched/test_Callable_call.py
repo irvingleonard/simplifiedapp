@@ -21,6 +21,14 @@ class TestExecuteCallable(TestCase):
 
 		self.assertRaises(ValueError, Callable, None)
 
+	def test_lambda_function(self):
+		"""
+		Testing "Callable.__call__" with a lambda function that doesn't have parameters
+		"""
+
+		expected_result = True
+		self.assertEqual(expected_result, Callable(lambda: True)())
+
 	def test_empty_function(self):
 		"""
 		Testing "Callable.__call__" with a function that doesn't have parameters
@@ -75,8 +83,8 @@ class TestExecuteCallable(TestCase):
 			'init_pos': 's',
 			'init_kw': 7,
 		}
-		expected_result = FixtureClassWNewAndInit(args_w_keys['new_pos'], args_w_keys['init_pos'], new_kw=args_w_keys['new_kw'], init_kw=args_w_keys['init_kw'])
-		self.assertEqual(expected_result, Callable(FixtureClassWNewAndInit)(**args_w_keys))
+		expected_result = FixtureClassWNewAndInitComplex(args_w_keys['new_pos'], args_w_keys['init_pos'], new_kw=args_w_keys['new_kw'], init_kw=args_w_keys['init_kw'])
+		self.assertEqual(expected_result, Callable(FixtureClassWNewAndInitComplex)(**args_w_keys))
 	
 	def test_deep_class(self):
 		"""
@@ -110,32 +118,55 @@ class TestExecuteCallable(TestCase):
 		}
 		expected_result = 'ultra-class-method_c'
 		self.assertEqual(expected_result, Callable(FixtureClassWMethods.class_method)(**args_w_keys))
-	
-	def test_class_w_bound_method(self):
+
+	def test_class_instance_w_bound_method(self):
 		"""
-		Test "Callable.__call__" with a bound method
+		Test "Callable.__call__" with a bound method of an instance
 		"""
-		
-		init_args = {
-			'init_arg': 'pre',
-		}
-		method_args = {
+
+		args_w_keys = {
 			'pos_arg': 'method_b',
 		}
 		expected_result = 'ultra-pre-bound-method_b'
-		self.assertEqual(expected_result, Callable(FixtureClassWMethods.regular_method)(init_args, method_args))
-	
-	def notest_deep_class_w_bound_method(self):
+		self.assertEqual(expected_result, Callable(FixtureClassWMethods(init_arg='pre').regular_method)(**args_w_keys))
+
+	def test_class_w_instance_method(self):
 		"""
-		Test "Callable.__call__" with a bound method on a deep class
+		Test "Callable.__call__" with an instance method of a class
+		"""
+
+		parent_args_w_keys = {
+			'init_arg': 'PRE',
+		}
+		args_w_keys = {
+			'pos_arg': 'complicated',
+		}
+		expected_result = 'ultra-PRE-bound-complicated'
+		self.assertEqual(expected_result, Callable(FixtureClassWMethods.regular_method)(parent_args_w_keys, args_w_keys))
+
+	def test_deep_class_instance_w_bound_method(self):
+		"""
+		Test "Callable.__call__" with a bound method of an instance from deep class
+		"""
+
+		args_w_keys = {
+			'pos_arg': 'depp_pos',
+			'kw_arg': 'depp_word',
+		}
+		expected_result = 'INIT-PRE-depp_pos-depp_word'
+		self.assertEqual(expected_result, Callable(FixtureDeepClassL1.FixtureDeepClassL2.FixtureDeepClassL3(init_arg='INIT-PRE').deep_method)(**args_w_keys))
+
+	def test_deep_class_w_instance_method(self):
+		"""
+		Test "Callable.__call__" with an instance method of a deep class
 		"""
 		
 		init_args = {
-			'init_arg': 'pre',
+			'init_arg': 'depp_INIT',
 		}
 		method_args = {
-			'pos_arg': 'deepos',
-			'kw_arg': 'deepkw',
+			'pos_arg': 'depp_pos',
+			'kw_arg': 'depp_word',
 		}
-		expected_result = 'pre-deepos-deepkw'
+		expected_result = 'depp_INIT-depp_pos-depp_word'
 		self.assertEqual(expected_result, Callable(FixtureDeepClassL1.FixtureDeepClassL2.FixtureDeepClassL3.deep_method)(init_args, method_args))
