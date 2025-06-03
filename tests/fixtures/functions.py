@@ -112,12 +112,12 @@ def fixture_function_w_all_parameter_combinations(
 	
 	return ''.join(map(str, data))
 	
-def fixture_nested_functions_outer():
+def fixture_nested_functions_outer(*, kw_opt=None):
 	"""
 	Couple of nested functions (like a decorator). This is the outer one.
 	"""
 	
-	def fixture_nested_functions_inner():
+	def fixture_nested_functions_inner(pos_req, /):
 		"""
 		Couple of nested functions (like a decorator). This is the inner one.
 		"""
