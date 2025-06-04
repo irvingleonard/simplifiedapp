@@ -1,480 +1,278 @@
 #! python
-'''A simple way to run your python code from the CLI
+"""A simple way to run your python code from the CLI
 The module uses introspection to try and expose your code to the command line. It won't work in all cases, depends on the complexity of your code.
 
 ToDo:
 - Everything
-'''
+"""
 
-import argparse
-import configparser
-import inspect
-import json
-import logging
-import logging.handlers
-import os
-import pathlib
-import pprint
-import re
+from logging import basicConfig as logging_basicConfig, getLogger
+from logging.handlers import SysLogHandler
+
 import sys
-import types
 
-from .introspection_patched import object_metadata, Callable
+from .argparse_patched import argparse
+from .introspection_patched import get_target, object_metadata, Callable
 
 __version__ = '0.7.4'
 
-# EARLY_DEBUG = True
-
-LOGGER = logging.getLogger(__name__)
+LOGGER = getLogger(__name__)
 
 DEFAULT_LOG_PARAMETERS = {
 	'format'	: '%(asctime)s|%(name)s|%(levelname)s:%(message)s',
 	'datefmt'	: '%H:%M:%S',
 }
-DOCSTRING_FORMAT = re.compile('(?P<description>\A.+?$)(?:\n(?P<long_description>.+?)(?:^\s*\n.*)?)?\Z', re.IGNORECASE | re.MULTILINE | re.DOTALL)
-METADATA_TO_ARGPARSE = {'description' : 'description', 'long_description' : 'epilog'}
 PPRINT_WIDTH = 270
-OS_FILES = ('.DS_Store')
-
-try:
-	_parser = argparse.ArgumentParser()
-	_parser.add_argument("--foo", action="extend", nargs="+", type=str)
-except ValueError:
-	ADD_ARGUMENT_ACTION_EXTEND = False
-else:
-	ADD_ARGUMENT_ACTION_EXTEND = True
-
-######################## I/O Classes ########################
-
-class BaseValues:
-	
-	def __init__(self, content):
-		'''Init magic
-		Simply store the content for future use
-		'''
-		
-		self.content = content
-		
-	def __or__(self, other):
-		'''Update
-		"Merge" the content of both files and return a dict
-		'''
-		
-		result = self.content.copy()
-		result.update(other.content)
-		return result
-		
-	def __ror__(self, other):
-		'''Reflected update
-		Update a builtin dict (or similar) and return a dict
-		'''
-		
-		return BaseValues(other) | self
-		
-	def __repr__(self):
-		return repr(self.content)
-		
-	def __str__(self):
-		return str(self.content)
-
-class BaseFile(BaseValues):
-	'''Parent class for all modules
-	All the formats should inherit from this one and it shouldn't be instantiated directly.
-	'''
-	
-	def __init__(self, string_, mode = 'r', **kwargs):
-		'''Init magic
-		Using the argparse builtin file handling
-		'''
-		
-		self.file = argparse.FileType(mode, **kwargs)(string_)
-	
-	def __del__(self):
-		self.file.close()
-	
-	def __getattr__(self, name):
-		'''Getattr magic
-		Used to lazy load the content in the file
-		'''
-		
-		if name == 'content':
-			LOGGER.debug('Processing input %s', self.file.name)
-			value = self._get_content()
-		else:
-			raise AttributeError(name)
-
-		self.__setattr__(name, value)
-		return value
-
-	def __repr__(self):
-		return self.file.name
-		
-	def __str__(self):
-		return self._encode_content()
+OS_FILES = ('.DS_Store',)
 
 
-class JSONFile(BaseFile):
-	def _get_content(self):
-		LOGGER.debug('Loading JSON data')
-		return json.load(self.file)
+class LocalFormatterClass(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+	"""
+	"""
+	pass
 
 
-class INIFile(BaseFile):
-	def _get_content(self):
-		LOGGER.debug('Loading config (ini) data')
-		config = configparser.ConfigParser()
-		config.optionxform = str
-		config.read_file(self.file)
-		values = {}
-		for section, content in config.items():
-			if section == 'DEFAULT':
-				LOGGER.debug('Adding settings from default section')
-				values.update({key : value for key, value in content.items()})
-			else:
-				LOGGER.debug('Adding settings from section %s', section)
-				values[section] = {key : value for key, value in content.items()}
-		return values
+class IntrospectedArgumentParser(argparse.ArgumentParser):
+	"""
+	"""
 
-
-class InputFiles(argparse.Action):
-	
-	_SUPPORTED_FORMATS = {
-		'json'	: JSONFile,
-		'ini'	: INIFile,
+	BUILTIN_OPTIONS = {
+		'--log-level'	: {
+			'choices' : ['notset', 'debug', 'info', 'warning', 'error', 'critical'],
+			'default' : 'info',
+			'help' : 'minimum severity of the messages to be logged',
+		},
+		'--log-to-syslog'	: {
+			'action' : 'store_true',
+			'default' : False,
+			'help' : 'send logs to syslog.',
+		},
+		# 'input-file'		: {'action' : InputFiles, 'nargs' : 2, 'default' : argparse.SUPPRESS, 'help' : 'read parameters from a file or standard input (using the "-" special name). Consumes 2 parameters: first one is the path (or "-") and second one is the format'},
+		# 'output-file'		: {'action' : 'store_true', 'default' : False, 'help' : 'output a JSON object as a string'},
 	}
-	
-	def __init__(self, option_strings, dest, nargs = None, **kwargs):
-		if (nargs is None) or not isinstance(nargs, int) or (nargs != 2):
-			raise ValueError('InputFile requires exactly 2 arguments (file path & file format)')
-		
-		super().__init__(option_strings, dest, nargs = nargs, **kwargs)
-	
-	def __call__(self, parser, namespace, values, option_string = None):
-		reported_format = values[1]
-		if reported_format.lower() not in self._SUPPORTED_FORMATS:
-			raise ValueError('Input file format not supported: {}'.format(reported_format))
-		item = self._SUPPORTED_FORMATS[reported_format.lower()](values[0])
-		items = getattr(namespace, self.dest, None)
-		if items is None:
-			items = []
-		items.append(item)
-		setattr(namespace, self.dest, items)
+	METADATA_MAP = {
+		'name'				: 'prog',
+		'description'		: 'description',
+		'long_description'	: 'epilog',
+	}
+	DEFAULT_INIT_PARAMS = {
+		'formatter_class'	: LocalFormatterClass,
+	}
+
+	def __init__(self, callable_or_module=None, /, **kwargs):
+		"""
+		"""
+
+		if callable_or_module is None:
+			metadata, metadata_args = None, {}
+		else:
+			metadata = object_metadata(callable_or_module)
+			metadata_args = {self.METADATA_MAP[key] : value for key, value in metadata.items() if key in self.METADATA_MAP}
+
+		super().__init__(**(self.DEFAULT_INIT_PARAMS | metadata_args | kwargs))
 
 
-######################## End of I/O Classes ########################
+	@classmethod
+	def _prepare_parameter(cls, **details):
+		"""Extends argument's values
+		Uses the defaults, annotations and docstring to extend the argument values (type, action, etc.)
 
+		ToDo:
+		- Documentation
+		"""
 
-class ArgparseFormatterClass(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
-    pass
-
-
-DEFAULT_ARGUMENT_PARSER = (argparse.ArgumentParser, [], {'formatter_class' : ArgparseFormatterClass})
-BUILTIN_ARGPARSE_OPTIONS = {
-	'--log-level'		: {'choices' : ['notset', 'debug', 'info', 'warning', 'error', 'critical'], 'default' : 'info', 'help' : 'minimum severity of the messages to be logged'},
-	'--log-to-syslog'	: {'action' : 'store_true', 'default' : False, 'help' : 'send logs to syslog.'},
-	'--input-file'		: {'action' : InputFiles, 'nargs' : 2, 'default' : argparse.SUPPRESS, 'help' : 'read parameters from a file or standard input (using the "-" special name)'},
-	'--json'			: {'action' : 'store_true', 'default' : False, 'help' : 'output a JSON object as a string'},
-}
-
-def param_metadata(arg_name, arg_values, annotations, docstring):
-	'''Extends argument's values
-	Uses the defaults, annotations and docstring to extend the argument values (type, action, etc.)
-	
-	ToDo:
-	- Documentation
-	'''
-
-	# arg_values['help'] = 'ToDo: help string not supported yet'
-
-	if arg_name in annotations:
-		if inspect.isclass(annotations[arg_name]):
-			arg_values['type'] = annotations[arg_name]
-		elif isinstance(annotations[arg_name], tuple) or isinstance(annotations[arg_name], list):
-			arg_values['choices'] = annotations[arg_name]
-	elif 'default' in arg_values:
-		if arg_values['default'] is None:
-			arg_values['default'] = argparse.SUPPRESS
-		elif type(arg_values['default']) != str:
-			if isinstance(arg_values['default'], bool):
-				if arg_values['default']:
-					arg_values['action'] = 'store_false'
+		result, errors, warnings = {}, [], []
+		if 'default' in details:
+			if details['default'] is None:
+				result['default'] = SUPPRESS
+			elif isinstance(details['default'], str):
+				result['default'] = details['default']
+			elif isinstance(details['default'], bool):
+				if details['default']:
+					result['action'] = 'store_false'
 				else:
-					arg_values['action'] = 'store_true'
-			elif isinstance(arg_values['default'], (tuple, list)):
-				arg_values['action'] = 'extend' if ADD_ARGUMENT_ACTION_EXTEND else 'append'
-				arg_values['default'] = []
-				if 'nargs' not in arg_values:
-					arg_values['nargs'] = '+'
-			elif isinstance(arg_values['default'], dict):
-				arg_values['action'] = 'extend' if ADD_ARGUMENT_ACTION_EXTEND else 'append'
-				arg_values['nargs'] = '+'
-				arg_values['default'] = []
-				if 'help' not in arg_values:
-					arg_values['help'] = ''
-				arg_values['help'] += '(Use the key=value format for each entry)'
+					result['action'] = 'store_true'
+			elif isinstance(details['default'], (frozenset, set, tuple, list)):
+				result['action'] = 'extend'
+				result['default'] = details['default']
+				if 'nargs' not in result:
+					result['nargs'] = '*'
+			elif isinstance(details['default'], dict):
+				result['action'] = 'extend'
+				result['nargs'] = '*'
+				result['default'] = ['='.join((str(key), str(value))) for key, value in details['default'].items()]
+				if ('special' in details) and (details['special'] == 'varkw'):
+					result['type'] = VarKWParameter
+					if 'help' not in result:
+						result['help'] = ''
+					result['help'] += '(Use the key=value format for each entry)'
 			else:
-				arg_values['type'] = type(arg_values['default'])
+				result['type'] = type(details['default'])
+				result['default'] = details['default']
+			if ('nargs' not in result) and ('positional' in details) and details['positional']:
+				result['nargs'] = '?'
+		elif ('positional' in details) and not details['positional']:
+			result['required'] = True
 
-	return arg_values
+		if 'annotation' in details:
+			LOGGER.warning('Type hinting from parameter annotation is not supported yet')
 
+		if 'docstring' in details:
+			if 'type_name' in details['docstring']:
+				LOGGER.warning('Type hinting from docstring is not supported yet')
+			if 'is_optional' in details['docstring']:
+				if details['docstring']['is_optional'] and ('default' not in details):
+					errors.append("""Type hinting for parameter "{parameter_name}" from "{parent_description}" suggests it's optional but doesn't match "{parent_description}"'s signature""")
+				elif (not details['docstring']['is_optional']) and ('default' in details):
+					warnings.append("""Type hinting for parameter "{parameter_name}" from "{parent_description}" suggests it's required but doesn't match "{parent_description}"'s signature""")
+			if 'description' in details['docstring']:
+				result['help'] = details['docstring']['description']
 
-def callable_args(callable_, from_class = False):
-	'''Extract argparse info from callable
-	Uses introspection to build a dict out of a callable, usable to build an argparse tree.
-	
-	ToDo:
-	- Documentation
-	'''
-	
-	try:
-		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = inspect.getfullargspec(callable_)
-	except TypeError:
-		LOGGER.debug('Signature inspect failed. Using generic signature for callable: %s', callable_)
-		args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations = [], 'args', 'kwargs', None, [], None, {}	#Generic signature: just args and kwargs, whatever you pass will be.
-		if from_class:
-			args = ['self']	# Default will be bound method
-	if from_class and (callable_ is object.__init__):
-		varargs, varkw = None, None			#Builtin object.__init__ case, where *args and **kwargs are accepted but only through super()
-	LOGGER.debug('Callable "%s" yield signature: %s', callable_, dict(zip(('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs', 'kwonlydefaults', 'annotations'),(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations))))
+		if 'version' in details:
+			result = {
+				'action' : 'version',
+				'version' : details['version'],
+			}
 
-	if from_class:
-		is_boundmethod = False
-		if len(args):
-			if args[0] == 'self':
-				is_boundmethod = True
-				args.pop(0)
-			elif args[0] in ['cls', 'type']:
-				args.pop(0)
+		return result, errors, warnings
 
-	if defaults is None:
-		defaults = []
-	req_args = {arg : {} for arg in args[:len(args) - len(defaults)]}
-	# print('Got req_args {} from args {} and defaults {}'.format(req_args, args, defaults))
-	opt_args = {arg : {'default' : arg_default} for arg, arg_default in dict(zip(args[-len(defaults):], defaults)).items()}
+	@classmethod
+	def _prepare_parameters(cls, raw_parameters, container_name, initial_values={}):
+		"""Prepare parameters
+		Takes introspected parameters and convert them into argparse friendly versions.
 
-	if varargs is not None:
-		req_args.update({varargs : {'default' : [], 'nargs' : '*'}})
+		:param dict raw_parameters: a mapping of parameter name to parameter details like the one returned by "parameters_from_callable"
+		:param str container_name: the name of the object containing the provided parameters
+		:param dict? initial_values: a mapping of parameter names and values to use as default (overriding the ones in the signature if present)
+		:returns dict: a mapping of parameter names and details that can be used to build an ArgumentParser
+		"""
 
-	if kwonlydefaults is not None:
-		opt_args.update({arg : {'default' : arg_default} for arg, arg_default in kwonlydefaults.items()})
+		parameters = {}
+		for parameter, details in raw_parameters.items():
+			parameter_args, errors, warnings = cls._prepare_parameter(**details)
+			for error in errors:
+				LOGGER.error(error.format(parameter_name=parameter, parent_description=container_name))
+			for warning in warnings:
+				LOGGER.warning(warning.format(parameter_name=parameter, parent_description=container_name))
+			if parameter in initial_values:
+				parameter_args['default'] = initial_values[parameter]
+			parameter_name = '_'.join((container_name, parameter))
+			parameter_name = parameter_name.replace('_', '-')
+			if not details['positional']:
+				parameter_name = '--{}'.format(parameter_name)
+			parameters[parameter_name] = parameter_args
+		return parameters
 
-	if varkw is not None:
-		opt_args.update({varkw : {'default' : {}}})
+	@classmethod
+	def from_callable(cls, callable_, from_class=False, parents=None, initial_values={}):
+		"""Extract argparse info from callable
+		Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 
-	metadata = object_metadata(callable_)
+		ToDo:
+		- Documentation
+		"""
 
-	arguments = {arg : param_metadata(arg, arg_values, annotations, docstring = '') for arg, arg_values in req_args.items()}
-	arguments.update({('-{}' if len(arg) == 1 else '--{}').format(arg) : param_metadata(arg, arg_values, annotations, docstring = '') for arg, arg_values in opt_args.items()})
+		LOGGER.debug('Generating parser data for callable: %s', callable_)
+		callable_metadata = object_metadata(callable_)
 
-	arguments[False] = {'__simplifiedapp_' : (callable_, tuple(args), varargs, tuple(kwonlyargs), varkw)}
-	if from_class:
-		if is_boundmethod:
-			arguments[False] = {'__simplifiedapp_' : (metadata['name'], tuple(args), varargs, tuple(kwonlyargs), varkw)}
+		parser_args = {
+			'prog'				: callable_metadata['name'],
+			'description'		: callable_metadata.get('description', None),
+			'epilog'			: callable_metadata.get('long_description', None),
+			'formatter_class'	: LocalFormatterClass,
+		}
+		if parents is not None:
+			parser_args['parents'] = parents
+		result = cls(**parser_args)
 
-	arguments[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}
-	if 'version' in metadata:
-		arguments['--version'] = {'action' : 'version', 'version' : metadata['version']}
+		raw_parameters = parameters_from_function(callable_, function_metadata=callable_metadata, from_class=from_class)
+		if 'version' in callable_metadata:
+			raw_parameters['version'] = {'version': callable_metadata['version'], 'positional': False}
+		parameters = cls._prepare_parameters(raw_parameters=raw_parameters, container_name=callable_metadata['name'],
+											 initial_values=initial_values)
+		for parameter_name, kwargs in parameters.items():
+			result.add_argument(parameter_name, **kwargs)
 
-	LOGGER.debug('Generated arguments: %s', arguments)
-	return arguments
+		result.set_defaults(callable=callable_)
 
+		return result
 
-def class_args(class_, allowed_privates = ()):
-	'''Extract argparse info from class
-	Uses introspection to build a dict out of a class, usable to build an argparse tree.
-	
-	ToDo:
-	- Diferentiate the instantiation from the call. Allow __call__ to be a subparser an let the "class parameters" be about __init__
-	- Add support for immutable objects (add the __new__ method into the process) 
-	- Documentation
-	'''
-	
-	allowed_privates = ['__new__', '__call__'] + list(allowed_privates)
-	
-	class_opts = callable_args(getattr(class_, '__init__'), from_class = True)
-	class_opts[False]['__simplifiedapp_'] = (class_, *class_opts[False]['__simplifiedapp_'][1:])
+	@classmethod
+	def from_class(cls, class_, parents=None, initial_values={}):
+		"""Extract argparse info from class
+		Uses introspection to build a dict out of a class, usable to build an argparse tree.
 
-	subparsers = {}
-	for name, callable_ in inspect.getmembers(class_, inspect.isroutine):
-		if (name[0] == '_') and (name not in allowed_privates):
-			LOGGER.debug('Skipping private method "%s" in class %s', name, class_)
-			continue
-		elif callable_ is object.__new__:
-			LOGGER.debug("Skipping object's __new__ in class %s", class_)
-			continue
-		try:
-			args = callable_args(callable_, from_class = True)
-		except Exception:
-			LOGGER.exception("Member %s of class %s couldn't be processed", name, class_)
-		else:
-			if isinstance(args[False]['__simplifiedapp_'][0], str):
-				args[False]['__simplifiedapp_'] = (class_opts[False]['__simplifiedapp_'], args[False]['__simplifiedapp_'])
-			subparsers[name] = (([], {}), args)
+		ToDo:
+		- Documentation
+		"""
 
-	metadata = object_metadata(class_)
-	class_opts[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}
-	if 'version' in metadata:
-		class_opts['--version'] = {'action' : 'version', 'version' : metadata['version']}
-	if subparsers:
-		class_opts[True] = ({'title' : str(class_.__name__) + ' methods'}, subparsers)
+		LOGGER.debug('Generating parser data for class: %s', class_)
+		class_metadata = object_metadata(class_)
 
-	LOGGER.debug('Generated class options: %s', class_opts)
-	return class_opts
+		parser_args = {
+			'prog'				: class_metadata['name'],
+			'description'		: class_metadata.get('description', None),
+			'epilog'			: class_metadata.get('long_description', None),
+			'formatter_class'	: LocalFormatterClass,
+		}
+		if parents is not None:
+			parser_args['parents'] = parents
+		result = cls(**parser_args)
+		raw_parameters = parameters_from_class(class_)
+		if 'version' in class_metadata:
+			raw_parameters['version'] = {'version': class_metadata['version'], 'positional': False}
+		parameters = cls._prepare_parameters(raw_parameters=raw_parameters, container_name=class_metadata['name'],
+											 initial_values=initial_values)
+		for parameter_name, kwargs in parameters.items():
+			result.add_argument(parameter_name, **kwargs)
 
+		result.set_defaults(callable=class_)
 
-def module_args(module, allowed_privates = ('__call__',)):
-	'''Extract argparse info from module
-	Uses introspection to build a dict out of a module, usable to build an argparse tree.
-	
-	ToDo: Documentation
-	'''
+		return result
 
-	subparsers = {}
-	mod_opts = {}
-	for name, callable_ in inspect.getmembers(module, inspect.isroutine):
-		if name[0] == '_' and (name not in allowed_privates):
-			LOGGER.debug('Skipping private callable: %s', name)
-			continue
-		try:
-			args = callable_args(callable_)
-		except Exception as error:
-			LOGGER.warning('Uncompatible callable %s: %s', name, error)
-			pass
-		else:
-			subparsers[name] = (([], {}), args)
+	@classmethod
+	def new_base_parser(cls):
+		"""Return new base parser
+		Builds a base parser, which contains the basic switches added by the module
 
-	for name, class_ in inspect.getmembers(module, inspect.isclass):
-		try:
-			args = class_args(class_)
-		except Exception as error:
-			LOGGER.warning('Uncompatible class %s: %s', name, error)
-			pass
-		else:
-			subparsers[name] = (([], {}), args)
+		ToDo:
+		- Documentation
+		"""
 
-	metadata = object_metadata(module)
-	mod_opts[None] = {METADATA_TO_ARGPARSE[key] : value for key, value in metadata.items() if key in METADATA_TO_ARGPARSE}
-	if 'version' in metadata:
-		mod_opts['--version'] = {'action' : 'version', 'version' : metadata['version']}
-	if subparsers:
-		mod_opts[True] = ({'title' : metadata['name'] + ' callables'}, subparsers)
+		LOGGER.debug('Creating new base parser')
+		result = cls(add_help=False)
+		for parameter_name, kwargs in cls.BUILTIN_OPTIONS.items():
+			result.add_argument(parameter_name, **kwargs)
+		return result
 
-	return mod_opts
+	@classmethod
+	def run_callable(cls, callable_, args_w_keys={}):
+		"""Extract argparse info from callable
+        Uses introspection to build a dict out of a callable, usable to build an argparse tree.
 
+        ToDo:
+        - Documentation
+        """
 
-def build_parser(parser_content, argument_parser = None):
-	'''Argparse parser building
-	Recursive builder, for tree creation.
-
-	The items in parser_content, which is expected to be a dict or compatible, are processed recursively:
-	- a False key is used to store the "argparse defaults", and the value should be a dict
-	- a string key with a dict value denotes an argument. The key will be the argument name and the value the other attributes
-	- a True key with a tuple value denotes subparsers,
-	- a string key with a tuple value denotes a subparser
-	'''
-	
-	LOGGER.debug('Building parser (%s) with: %s', argument_parser, parser_content)
-	if argument_parser is None:
-		argument_parser = DEFAULT_ARGUMENT_PARSER[0](*DEFAULT_ARGUMENT_PARSER[1], **DEFAULT_ARGUMENT_PARSER[2])
-
-	for key, value in parser_content.items():
-		if isinstance(key, bool):
-			if key:
-				if isinstance(value, tuple):
-					subparsers_info, subparsers_map = value
-					LOGGER.debug('Adding subparsers to parser %s with: %s', argument_parser, subparsers_info)
-					subparsers = argument_parser.add_subparsers(**subparsers_info)
-					build_parser(subparsers_map, subparsers)
+		callable_metadata = object_metadata(callable_)
+		callable_args_w_keys, callable_name = {}, callable_metadata['name']
+		parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata)
+		for key, values in args_w_keys.items():
+			if key[:len(callable_name)] == callable_name:
+				param_name = key[len(callable_name ) +1:]
+				if ('special' in parameters[param_name]) and (parameters[param_name]['special'] == 'varkw'):
+					callable_args_w_keys[param_name] = {}
+					for kw_dict in values:
+						callable_args_w_keys[param_name].update(kw_dict)
 				else:
-					raise ValueError('The argparser value is not supported: {}'.format(parser_content))
-			else:
-				LOGGER.debug('Adding defaults to parser %s: %s', argument_parser, value)
-				argument_parser.set_defaults(**value)
-		elif isinstance(key, str):
-			if isinstance(value, dict):
-				LOGGER.debug('Adding argument %s with: %s', key, value)
-				argument_parser.add_argument(key, **value)
-			elif isinstance(value, tuple):
-				subparser_info, subparser_arguments = value
-				subparser_info = list(subparser_info)
-				subparser_info[0] = subparser_info[0] + DEFAULT_ARGUMENT_PARSER[1]
-				subparser_info[1].update(DEFAULT_ARGUMENT_PARSER[2])
-				if None in subparser_arguments:
-					subparser_info[1].update(subparser_arguments[None])
-				LOGGER.debug('Adding subparser %s with: %s', key, subparser_info)
-				subparser = argument_parser.add_parser(key, *subparser_info[0], **subparser_info[1])
-				build_parser(subparser_arguments, subparser)
-			else:
-				raise ValueError('The argparser value is not supported: {}'.format(parser_content))
-		elif key is None:
-			LOGGER.debug('Skipping parser metadata')
-		else:
-			raise ValueError('The argparser key "{}" is not supported: {}'.format(key, parser_content))
-	
-	return argument_parser
+					callable_args_w_keys[param_name] = values
+
+		result = execute_callable(callable_, args_w_keys=callable_args_w_keys, callable_metadata=callable_metadata, parameters=parameters)
+		return str(result)
 
 
-def run_call_new(call_, complete_input, parent = None):
-	'''Execute a callable
-	Just forwards the call to the introspection_patched.Callable logic.
-	
-	It doesn't work, though :(
-	'''
-	
-	if len(call_) != 5:
-		raise ValueError('Malformed call tuple')
-	else:
-		LOGGER.debug('Running call with: %s', call_)
-	
-	callable_, pos_args, args_name, kw_args, kwargs_name = call_
-	
-	if isinstance(callable_, str):
-		if parent is None:
-			raise ValueError('A callable "string" requires a parent object')
-		else:
-			callable_ = getattr(parent, callable_)
-	
-	return Callable(callable_)(**complete_input)
-	
-
-def run_call(call_, complete_input, parent = None):
-	'''Execute a callable
-	Unpacks the call_ tuple, runs some checks and get some defaults if there's missing info. Returns the result of such run.
-	
-	ToDo: Documentation
-	'''
-
-	if len(call_) != 5:
-		raise ValueError('Malformed call tuple')
-	else:
-		LOGGER.debug('Running call with: %s', call_)
-
-	callable_, pos_args, args_name, kw_args, kwargs_name = call_
-
-	if isinstance(callable_, str):
-		if parent is None:
-			raise ValueError('A callable "string" requires a parent object')
-		else:
-			callable_ = getattr(parent, callable_)
-
-	positional_values = [complete_input[key] if key in complete_input else None for key in pos_args]
-	if (args_name is not None) and (args_name in complete_input) and (complete_input[args_name] is not None):
-		positional_values += complete_input[args_name]
-
-	keyword_values = {key : value for key, value in complete_input.items() if key in kw_args}
-	if (kwargs_name is not None) and (kwargs_name in complete_input) and (complete_input[kwargs_name] is not None):
-		for kwequal in complete_input[kwargs_name]:
-			key, value = kwequal.split('=', maxsplit = 1)
-			if (key in pos_args) or (key in kw_args):
-				LOGGER.warning('Skipping %s for available switch: %s', kwargs_name, key)
-			else:
-				keyword_values[key] = value
-
-	return callable_(*positional_values, **keyword_values)
-
-
-def main(target = None, sys_argv = None):
-	'''Simplified run of an app.
+def main(target=None, sys_argv=None):
+	"""Simplified run of an app.
 	Performs a simplified procedure of an app run. It will build and argparse object out of a module, class, or callable referenced via "target" and run it.
 
 	target can be the name of the module/class/callable, as a string, or the actual object. If "None", then the target will be the calling module.
@@ -485,31 +283,63 @@ def main(target = None, sys_argv = None):
 	- input_file: if this is set, it should contain the path to an input file and a second parameter stating the format. The file will be parsed an used as part of the configuration.
 	- json: transforms the resulting object into a json string. If the result is a string this won't happen.
 	- _json_default: if this is set, it should point to a function that will be used in the json conversion as the default casting. If not defined, "str" is then used (everything is casted to string).
-	
+
 	A callable will be called and passed all the configuration options. In the case of a class method, a class instance will be created first, passing all the configuration to the constructor and then the instance method will be called with all the configuration.
 
 	Results; if your code returns:
 	- a string, it will be printed as is.
 	- any other type of object will be printed with pprint
 	- any other type of object, and the json flag was passed as True, then it will be printed as a json string (json.dumps)
-	
+
 	ToDo:
-	- Documentation
+	- Implement a multipass algorithm, early loading the input_files
 	- Generalize "output" via output_file (instead of the lonely json)
 	- Add support to log_file (send logs to file)
-	'''
+	- Documentation
+	"""
 
-	try:
-		if EARLY_DEBUG:
-			log_parameters = DEFAULT_LOG_PARAMETERS.copy()
-			log_parameters['level'] = 'DEBUG'
-			logging.basicConfig(**log_parameters)
-			LOGGER.debug('Logging configured  with: %s', log_parameters)
-	except Exception:
-		if hasattr(sys.modules[__name__], 'EARLY_DEBUG') and (EARLY_DEBUG):
-			raise
+	if sys_argv is None:
+		sys_argv = sys.argv[1:] if len(sys.argv) > 1 else []
 
-	caller = inspect.getmodule(inspect.stack()[1][0])
+	base_parser = IntrospectedArgumentParser.new_base_parser()
+	base_values, callable_values = base_parser.parse_known_args(sys_argv)
+
+	log_parameters = DEFAULT_LOG_PARAMETERS.copy()
+	if hasattr(base_values, 'log_level') and len(base_values.log_level):
+		log_parameters['level'] = base_values.log_level.upper()
+	if hasattr(base_values, 'log_to_syslog') and base_values.log_to_syslog:
+		log_parameters['handlers'] = [SysLogHandler(address='/dev/log')]
+	logging_basicConfig(**log_parameters)
+	LOGGER.debug('Logging configured  with: %s', log_parameters)
+
+	target = get_target(target=target)
+	parser = IntrospectedArgumentParser(target)
+	args = parser.parse_args(callable_values)
+
+	return args
+
+	args_w_keys = {key.replace('-', '_'): value for key, value in vars(args).items()}
+	callable_ = args_w_keys.pop('callable')
+	result = parser.run_callable(callable_=callable_, args_w_keys=args_w_keys)
+
+	if isinstance(result, str):
+		LOGGER.debug('The result is a string. Printing it as is.')
+		print(result, end='')
+	else:
+		if hasattr(args, 'json') and args.json:
+			LOGGER.debug('The result is an object. Printing it as a json string.')
+			print(json.dumps(result, default=args._json_default if hasattr(args, '_json_default') else str))
+		else:
+			LOGGER.debug('The result is an object. Printing it with pprint.')
+			pretty_print(result, width=PPRINT_WIDTH)
+
+	return
+
+	result = IntrospectedArgumentParser(target)
+	# print(result)
+	return result
+
+	caller = getmodule(stack()[1][0])
 	LOGGER.debug('Got caller: %s', caller)
 
 	if target is None:
@@ -529,14 +359,23 @@ def main(target = None, sys_argv = None):
 				LOGGER.debug('Target is a loadable module: %s', target)
 			except ModuleNotFoundError:
 				raise ValueError('Target "{}" could not be identified'.format(target))
+	else:
+		LOGGER.debug('Target is an object: %s', target)
+
+	result = ArgparseParser.from_callable(target)
+	# print(result)
+	return result
 
 	arg_parser_data = BUILTIN_ARGPARSE_OPTIONS.copy()
 	try:
 		if inspect.ismodule(target):
+			LOGGER.debug('Generating parser data for target as a module')
 			arg_parser_data.update(module_args(target))
 		elif inspect.isclass(target):
+			LOGGER.debug('Generating parser data for target as a class')
 			arg_parser_data.update(class_args(target))
 		else:
+			LOGGER.debug('Generating parser data for target as a callable')
 			arg_parser_data.update(callable_args(target))
 	except Exception as error:
 		raise ValueError("Main's target ({}) is not supported: {}".format(target, error))
@@ -546,34 +385,16 @@ def main(target = None, sys_argv = None):
 	keyword_args = DEFAULT_ARGUMENT_PARSER[2].copy()
 	if None in arg_parser_data:
 		keyword_args.update(arg_parser_data[None])
-	args = build_parser(parser_content = arg_parser_data, argument_parser = DEFAULT_ARGUMENT_PARSER[0](*DEFAULT_ARGUMENT_PARSER[1], **keyword_args)).parse_args(sys_argv)
-	
-	log_parameters = DEFAULT_LOG_PARAMETERS.copy()
-	
-	if hasattr(args, 'log_level') and len(args.log_level):
-		log_parameters['level'] = args.log_level.upper()
-		
-	if hasattr(args, 'log_to_syslog') and args.log_to_syslog:
-		log_parameters['handlers'] = [logging.handlers.SysLogHandler(address = '/dev/log')]
-	
-	logging.basicConfig(**log_parameters)
-	LOGGER.debug('Logging configured  with: %s', log_parameters)
-	
-	complete_input = {}
-	if hasattr(args, 'input_file'):
-		for input_ in args.input_file:
-			LOGGER.debug('Merging values from %s', input_)
-			complete_input = complete_input | input_
-	
-	vars_args = vars(args)
-	complete_input.update(vars_args)
+	args = build_parser(parser_content=arg_parser_data, argument_parser=DEFAULT_ARGUMENT_PARSER[0](*DEFAULT_ARGUMENT_PARSER[1], **keyword_args)).parse_args(sys_argv)
+	LOGGER.debug('Complete input before CLI merge: %s', complete_input)
+	complete_input.update(vars(args))
 	LOGGER.debug('Complete input is: %s', complete_input)
-	
+
 	if hasattr(args, '__simplifiedapp_'):
 		if len(args.__simplifiedapp_) == 2:
 			instance_call, method_call = args.__simplifiedapp_
 			instance = run_call(instance_call, complete_input)
-			result = run_call(method_call, complete_input, parent = instance)
+			result = run_call(method_call, complete_input, parent=instance)
 		else:
 			result = run_call(args.__simplifiedapp_, complete_input)
 	else:
@@ -585,41 +406,7 @@ def main(target = None, sys_argv = None):
 	else:
 		if hasattr(args, 'json') and args.json:
 			LOGGER.debug('The result is an object. Printing it as a json string.')
-			print(json.dumps(result, default = args._json_default if hasattr(args, '_json_default') else str))
+			print(json.dumps(result, default=args._json_default if hasattr(args, '_json_default') else str))
 		else:
 			LOGGER.debug('The result is an object. Printing it with pprint.')
-			pprint.pprint(result, width = PPRINT_WIDTH)
-
-
-def files_in_module_dir(module, dir_name, exclude = OS_FILES):
-	'''Build tree of file names.
-	It's a simple "walk" over a directory tree and return the file names. Includes a list of file names to be ignored.
-	
-	ToDo: Documentation
-	'''
-	
-	module = pathlib.Path(module)
-	
-	if not module.is_dir():
-		raise ValueError('{} is not a directory'.format(module.resolve()))
-	
-	dir = module / dir_name
-	if not dir.is_dir():
-		raise Exception('{} is not a directory'.format(dir.resolve()))
-	
-	result = []
-	
-	for relative_element in os.listdir(str(dir.resolve())):
-		
-		element = dir / relative_element
-		if relative_element in exclude:
-			LOGGER.warning('Skipping %s', element.resolve())
-			continue
-		if element.is_dir():
-			result += files_in_module_dir(module, pathlib.Path(dir_name) / relative_element, exclude = exclude)
-		elif element.is_file():
-			result.append(str(pathlib.Path(dir_name) / relative_element))
-		else:
-			LOGGER.warning('%s is not a file or directory', element.resolve())
-		
-	return result
+			pprint.pprint(result, width=PPRINT_WIDTH)
