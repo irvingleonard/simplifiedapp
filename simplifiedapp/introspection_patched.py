@@ -170,6 +170,23 @@ def signature_from_class(cls, class_):
 Signature.from_class = signature_from_class
 
 
+def list_callable_children(object_):
+	"""Enumerate this callable's functions and classes
+	Use introspection to indentify all the classes and function members of this callable. It will ignore all dunder methods except for "__call__".
+
+	:returns tuple: the list of functions and the list of classes
+	"""
+
+	functions, classes = [], []
+	for name, attr in getmembers(object_):
+		if (name in ('__call__',)) or (name[:2] != '__'):
+			if isclass(attr):
+				classes.append(attr)
+			elif callable(attr):
+				functions.append(attr)
+	return functions, classes
+
+
 class CallableType(Enum):
 	"""Callable types
 	List of callable types identified by the module so far
@@ -382,19 +399,3 @@ class Callable:
 				LOGGER.warning('Ignoring unused keyword arguments: %s', kwargs)
 		
 		return tuple(fixed_args), fixed_kwargs
-
-	def callable_children(self):
-		"""Enumerate this callable's functions and classes
-		Use introspection to indentify all the classes and function members of this callable. It will ignore all dunder methods except for "__call__".
-
-		:returns tuple: the list of functions and the list of classes
-		"""
-
-		functions, classes = [], []
-		for name, attr in getmembers(self._callable_):
-			if (name in ('__call__',)) or (name[:2] != '__'):
-				if isclass(attr):
-					classes.append(attr)
-				elif callable(attr):
-					functions.append(attr)
-		return functions, classes
