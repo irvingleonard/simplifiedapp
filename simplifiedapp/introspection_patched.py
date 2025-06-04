@@ -8,8 +8,9 @@ ToDo:
 
 from enum import Enum
 from importlib import import_module
-from inspect import getmembers, isclass, ismethod
+from inspect import getmembers, getmodule, isclass, ismethod, stack as inspect_stack
 from logging import getLogger
+from sys import modules
 from types import FunctionType, MethodType
 from warnings import warn
 
@@ -185,6 +186,46 @@ def list_callable_children(object_):
 			elif callable(attr):
 				functions.append(attr)
 	return functions, classes
+
+def get_target(target=None):
+	"""Figure out the target and its type
+	Use introspection to find the caller. It wouldn't be the caller to this function but the caller to this function's caller or whatever is passed as parameter.
+
+	:param target: Optionally pass the target (just passthrough) or as a string to resolve
+	:returns tuple: the target and the corresponding IS_FUNCTION, IS_CLASS, or IS_MODULE
+	"""
+
+	caller = inspect_stack()
+	if len(caller) < 2:
+		caller = None
+	else:
+		caller = getmodule(caller[2][0])
+		LOGGER.debug('Got caller: %s', caller)
+
+	if target is None:
+		if caller is None:
+			raise RuntimeError('Unsupported shallow call to "get_target" without a target')
+		else:
+			LOGGER.debug('Target not defined, using caller "%s" as target', caller)
+			target = caller
+	elif isinstance(target, str):
+		LOGGER.debug('Identifying string defined target: %s', target)
+		if hasattr(caller, target):
+			LOGGER.debug('Target is a member of caller: %s.%s', caller, target)
+			target = getattr(caller, target)
+		elif target in modules:
+			LOGGER.debug('Target is a loaded module: %s', target)
+			target = modules[target]
+		else:
+			try:
+				target = import_module(target)
+				LOGGER.debug('Target is a loadable module: %s', target)
+			except ModuleNotFoundError:
+				raise ValueError(f'Target "{target}" could not be identified')
+	else:
+		LOGGER.debug('Target is an object: %s', target)
+
+	return target
 
 
 class CallableType(Enum):
