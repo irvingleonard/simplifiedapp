@@ -142,6 +142,16 @@ class TestCallableBind(TestCase):
 		expected_result = (), {'a': 1, 'b': 2}
 		self.assertEqual(expected_result, callable_.bind(**run_input))
 
+	def test_function_w_all_parameters_lambda(self):
+		"""
+		Testing "Callable.bind" with a lambda function that takes several parameters
+		"""
+
+		callable_ = Callable(lambda pos_, pos_def='p', /, mix_def='m', *args, kw_req, kw_def='k', **kwargs: f'{pos_} {pos_def} {mix_def} {args} {kw_req} {kw_def} {kwargs}')
+		run_input = {'pos_': 1, 'kw_req': 2}
+		expected_result = (1, 'p', 'm'), {'kw_req': 2, 'kw_def': 'k'}
+		self.assertEqual(expected_result, callable_.bind(**run_input))
+
 	def test_function_w_all_parameter_combinations(self):
 		"""
 		Testing "Callable.bind" with a function that takes every possible parameter
