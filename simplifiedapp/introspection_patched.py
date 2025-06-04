@@ -8,7 +8,7 @@ ToDo:
 
 from enum import Enum
 from importlib import import_module
-from inspect import isclass, ismethod
+from inspect import getmembers, isclass, ismethod
 from logging import getLogger
 from types import FunctionType, MethodType
 from warnings import warn
@@ -382,4 +382,19 @@ class Callable:
 				LOGGER.warning('Ignoring unused keyword arguments: %s', kwargs)
 		
 		return tuple(fixed_args), fixed_kwargs
-	
+
+	def callable_children(self):
+		"""Enumerate this callable's functions and classes
+		Use introspection to indentify all the classes and function members of this callable. It will ignore all dunder methods except for "__call__".
+
+		:returns tuple: the list of functions and the list of classes
+		"""
+
+		functions, classes = [], []
+		for name, attr in getmembers(self._callable_):
+			if (name in ('__call__',)) or (name[:2] != '__'):
+				if isclass(attr):
+					classes.append(attr)
+				elif callable(attr):
+					functions.append(attr)
+		return functions, classes
