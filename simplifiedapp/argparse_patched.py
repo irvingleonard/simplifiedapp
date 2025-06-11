@@ -7,21 +7,18 @@ from pprint import pformat
 
 import argparse
 
-
 LOGGER = getLogger(__name__)
 
-
-def objects_are_family(first, second, raise_exception=True):
+def objects_are_family(first, second, /, *, raise_exception=True):
 	"""
 	"""
 
 	first_type, second_type = type(first), type(second)
-	# print('Comparing', first_type, 'and', second_type, sep=' ')
 	if issubclass(first_type, second_type) or issubclass(second_type, first_type):
 		return True
 	else:
 		if raise_exception:
-			raise ValueError("Can't compare unrelated objects {} and {}".format(first_type, second_type))
+			raise ValueError(f"Can't compare unrelated objects {first_type} and {second_type}")
 		else:
 			return False
 
@@ -34,7 +31,7 @@ def argument_group_repr(self):
 	args = ['<parent_container>']
 	for attr in ('title', 'description', 'prefix_chars', 'argument_default', 'conflict_handler'):
 		args.append('='.join((attr, repr(getattr(self, attr)))))
-	return '{}({})'.format(self.__class__.__name__, ', '.join(args))
+	return f"{self.__class__.__name__}({', '.join(args)})"
 argparse._ArgumentGroup.__repr__ = argument_group_repr
 
 ### Patch equality comparison across the board ###
@@ -50,10 +47,9 @@ def compare_objects(self, other, /):
 		my_vars = {key : value for key, value in my_vars.items() if key not in self.ATTRIBUTE_EQUALITY_IGNORE_LIST}
 	if hasattr(other, 'ATTRIBUTE_EQUALITY_IGNORE_LIST'):
 		other_vars = {key : value for key, value in other_vars.items() if key not in other.ATTRIBUTE_EQUALITY_IGNORE_LIST}
-	# print('Comparing vars', my_vars, 'and', other_vars, sep=' ')
 	result = my_vars == other_vars
 	if not result:
-		print('Found a discrepancy: \n{}\nand\n{}'.format(pformat(my_vars), pformat(other_vars)))
+		LOGGER.debug('Found a discrepancy comparing argparse objects: \n%s\nand\n%s', pformat(my_vars), pformat(other_vars))
 	return result
 
 argparse._AttributeHolder.__eq__ = compare_objects
@@ -79,7 +75,6 @@ def argument_parser_eq(self, other, /):
 	del other_vars['_registries']['type']
 	result = my_vars == other_vars
 	if not result:
-		print('Found a discrepancy: \n{}\nand\n{}'.format(pformat(my_vars), pformat(other_vars)))
+		LOGGER.debug('Found a discrepancy comparing ArgumentParser objects: \n%s\nand\n%s',pformat(my_vars), pformat(other_vars))
 	return result
 argparse.ArgumentParser.__eq__ = argument_parser_eq
-
