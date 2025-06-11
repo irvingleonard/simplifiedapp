@@ -8,267 +8,16 @@ ToDo:
 
 from logging import basicConfig as logging_basicConfig, getLogger
 from logging.handlers import SysLogHandler
+from pprint import pprint as pretty_print
 
 import sys
 
-from .argparse_patched import argparse
-from .introspection_patched import get_target, object_metadata, Callable
+from ._defaults import DEFAULT_LOG_PARAMETERS, PPRINT_WIDTH, OS_FILES
+from ._introspection import get_target, list_callable_children, object_metadata, Callable, IntrospectedArgumentParser
 
 __version__ = '0.7.4'
 
 LOGGER = getLogger(__name__)
-
-DEFAULT_LOG_PARAMETERS = {
-	'format'	: '%(asctime)s|%(name)s|%(levelname)s:%(message)s',
-	'datefmt'	: '%H:%M:%S',
-}
-PPRINT_WIDTH = 270
-OS_FILES = ('.DS_Store',)
-
-
-class LocalFormatterClass(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
-	"""
-	"""
-	pass
-
-
-class IntrospectedArgumentParser(argparse.ArgumentParser):
-	"""
-	"""
-
-	BUILTIN_OPTIONS = {
-		'--log-level'	: {
-			'choices' : ['notset', 'debug', 'info', 'warning', 'error', 'critical'],
-			'default' : 'info',
-			'help' : 'minimum severity of the messages to be logged',
-		},
-		'--log-to-syslog'	: {
-			'action' : 'store_true',
-			'default' : False,
-			'help' : 'send logs to syslog.',
-		},
-		# 'input-file'		: {'action' : InputFiles, 'nargs' : 2, 'default' : argparse.SUPPRESS, 'help' : 'read parameters from a file or standard input (using the "-" special name). Consumes 2 parameters: first one is the path (or "-") and second one is the format'},
-		# 'output-file'		: {'action' : 'store_true', 'default' : False, 'help' : 'output a JSON object as a string'},
-	}
-	METADATA_MAP = {
-		'name'				: 'prog',
-		'description'		: 'description',
-		'long_description'	: 'epilog',
-	}
-	DEFAULT_INIT_PARAMS = {
-		'formatter_class'	: LocalFormatterClass,
-	}
-
-	def __init__(self, callable_or_module=None, /, **kwargs):
-		"""
-		"""
-
-		if callable_or_module is None:
-			metadata, metadata_args = None, {}
-		else:
-			metadata = object_metadata(callable_or_module)
-			metadata_args = {self.METADATA_MAP[key] : value for key, value in metadata.items() if key in self.METADATA_MAP}
-
-		super().__init__(**(self.DEFAULT_INIT_PARAMS | metadata_args | kwargs))
-
-
-	@classmethod
-	def _prepare_parameter(cls, **details):
-		"""Extends argument's values
-		Uses the defaults, annotations and docstring to extend the argument values (type, action, etc.)
-
-		ToDo:
-		- Documentation
-		"""
-
-		result, errors, warnings = {}, [], []
-		if 'default' in details:
-			if details['default'] is None:
-				result['default'] = SUPPRESS
-			elif isinstance(details['default'], str):
-				result['default'] = details['default']
-			elif isinstance(details['default'], bool):
-				if details['default']:
-					result['action'] = 'store_false'
-				else:
-					result['action'] = 'store_true'
-			elif isinstance(details['default'], (frozenset, set, tuple, list)):
-				result['action'] = 'extend'
-				result['default'] = details['default']
-				if 'nargs' not in result:
-					result['nargs'] = '*'
-			elif isinstance(details['default'], dict):
-				result['action'] = 'extend'
-				result['nargs'] = '*'
-				result['default'] = ['='.join((str(key), str(value))) for key, value in details['default'].items()]
-				if ('special' in details) and (details['special'] == 'varkw'):
-					result['type'] = VarKWParameter
-					if 'help' not in result:
-						result['help'] = ''
-					result['help'] += '(Use the key=value format for each entry)'
-			else:
-				result['type'] = type(details['default'])
-				result['default'] = details['default']
-			if ('nargs' not in result) and ('positional' in details) and details['positional']:
-				result['nargs'] = '?'
-		elif ('positional' in details) and not details['positional']:
-			result['required'] = True
-
-		if 'annotation' in details:
-			LOGGER.warning('Type hinting from parameter annotation is not supported yet')
-
-		if 'docstring' in details:
-			if 'type_name' in details['docstring']:
-				LOGGER.warning('Type hinting from docstring is not supported yet')
-			if 'is_optional' in details['docstring']:
-				if details['docstring']['is_optional'] and ('default' not in details):
-					errors.append("""Type hinting for parameter "{parameter_name}" from "{parent_description}" suggests it's optional but doesn't match "{parent_description}"'s signature""")
-				elif (not details['docstring']['is_optional']) and ('default' in details):
-					warnings.append("""Type hinting for parameter "{parameter_name}" from "{parent_description}" suggests it's required but doesn't match "{parent_description}"'s signature""")
-			if 'description' in details['docstring']:
-				result['help'] = details['docstring']['description']
-
-		if 'version' in details:
-			result = {
-				'action' : 'version',
-				'version' : details['version'],
-			}
-
-		return result, errors, warnings
-
-	@classmethod
-	def _prepare_parameters(cls, raw_parameters, container_name, initial_values={}):
-		"""Prepare parameters
-		Takes introspected parameters and convert them into argparse friendly versions.
-
-		:param dict raw_parameters: a mapping of parameter name to parameter details like the one returned by "parameters_from_callable"
-		:param str container_name: the name of the object containing the provided parameters
-		:param dict? initial_values: a mapping of parameter names and values to use as default (overriding the ones in the signature if present)
-		:returns dict: a mapping of parameter names and details that can be used to build an ArgumentParser
-		"""
-
-		parameters = {}
-		for parameter, details in raw_parameters.items():
-			parameter_args, errors, warnings = cls._prepare_parameter(**details)
-			for error in errors:
-				LOGGER.error(error.format(parameter_name=parameter, parent_description=container_name))
-			for warning in warnings:
-				LOGGER.warning(warning.format(parameter_name=parameter, parent_description=container_name))
-			if parameter in initial_values:
-				parameter_args['default'] = initial_values[parameter]
-			parameter_name = '_'.join((container_name, parameter))
-			parameter_name = parameter_name.replace('_', '-')
-			if not details['positional']:
-				parameter_name = '--{}'.format(parameter_name)
-			parameters[parameter_name] = parameter_args
-		return parameters
-
-	@classmethod
-	def from_callable(cls, callable_, from_class=False, parents=None, initial_values={}):
-		"""Extract argparse info from callable
-		Uses introspection to build a dict out of a callable, usable to build an argparse tree.
-
-		ToDo:
-		- Documentation
-		"""
-
-		LOGGER.debug('Generating parser data for callable: %s', callable_)
-		callable_metadata = object_metadata(callable_)
-
-		parser_args = {
-			'prog'				: callable_metadata['name'],
-			'description'		: callable_metadata.get('description', None),
-			'epilog'			: callable_metadata.get('long_description', None),
-			'formatter_class'	: LocalFormatterClass,
-		}
-		if parents is not None:
-			parser_args['parents'] = parents
-		result = cls(**parser_args)
-
-		raw_parameters = parameters_from_function(callable_, function_metadata=callable_metadata, from_class=from_class)
-		if 'version' in callable_metadata:
-			raw_parameters['version'] = {'version': callable_metadata['version'], 'positional': False}
-		parameters = cls._prepare_parameters(raw_parameters=raw_parameters, container_name=callable_metadata['name'],
-											 initial_values=initial_values)
-		for parameter_name, kwargs in parameters.items():
-			result.add_argument(parameter_name, **kwargs)
-
-		result.set_defaults(callable=callable_)
-
-		return result
-
-	@classmethod
-	def from_class(cls, class_, parents=None, initial_values={}):
-		"""Extract argparse info from class
-		Uses introspection to build a dict out of a class, usable to build an argparse tree.
-
-		ToDo:
-		- Documentation
-		"""
-
-		LOGGER.debug('Generating parser data for class: %s', class_)
-		class_metadata = object_metadata(class_)
-
-		parser_args = {
-			'prog'				: class_metadata['name'],
-			'description'		: class_metadata.get('description', None),
-			'epilog'			: class_metadata.get('long_description', None),
-			'formatter_class'	: LocalFormatterClass,
-		}
-		if parents is not None:
-			parser_args['parents'] = parents
-		result = cls(**parser_args)
-		raw_parameters = parameters_from_class(class_)
-		if 'version' in class_metadata:
-			raw_parameters['version'] = {'version': class_metadata['version'], 'positional': False}
-		parameters = cls._prepare_parameters(raw_parameters=raw_parameters, container_name=class_metadata['name'],
-											 initial_values=initial_values)
-		for parameter_name, kwargs in parameters.items():
-			result.add_argument(parameter_name, **kwargs)
-
-		result.set_defaults(callable=class_)
-
-		return result
-
-	@classmethod
-	def new_base_parser(cls):
-		"""Return new base parser
-		Builds a base parser, which contains the basic switches added by the module
-
-		ToDo:
-		- Documentation
-		"""
-
-		LOGGER.debug('Creating new base parser')
-		result = cls(add_help=False)
-		for parameter_name, kwargs in cls.BUILTIN_OPTIONS.items():
-			result.add_argument(parameter_name, **kwargs)
-		return result
-
-	@classmethod
-	def run_callable(cls, callable_, args_w_keys={}):
-		"""Extract argparse info from callable
-        Uses introspection to build a dict out of a callable, usable to build an argparse tree.
-
-        ToDo:
-        - Documentation
-        """
-
-		callable_metadata = object_metadata(callable_)
-		callable_args_w_keys, callable_name = {}, callable_metadata['name']
-		parameters = parameters_from_callable(callable_, callable_metadata=callable_metadata)
-		for key, values in args_w_keys.items():
-			if key[:len(callable_name)] == callable_name:
-				param_name = key[len(callable_name ) +1:]
-				if ('special' in parameters[param_name]) and (parameters[param_name]['special'] == 'varkw'):
-					callable_args_w_keys[param_name] = {}
-					for kw_dict in values:
-						callable_args_w_keys[param_name].update(kw_dict)
-				else:
-					callable_args_w_keys[param_name] = values
-
-		result = execute_callable(callable_, args_w_keys=callable_args_w_keys, callable_metadata=callable_metadata, parameters=parameters)
-		return str(result)
 
 
 def main(target=None, sys_argv=None):
@@ -303,7 +52,6 @@ def main(target=None, sys_argv=None):
 
 	base_parser = IntrospectedArgumentParser.new_base_parser()
 	base_values, callable_values = base_parser.parse_known_args(sys_argv)
-
 	log_parameters = DEFAULT_LOG_PARAMETERS.copy()
 	if hasattr(base_values, 'log_level') and len(base_values.log_level):
 		log_parameters['level'] = base_values.log_level.upper()
@@ -312,15 +60,12 @@ def main(target=None, sys_argv=None):
 	logging_basicConfig(**log_parameters)
 	LOGGER.debug('Logging configured  with: %s', log_parameters)
 
-	target = get_target(target=target)
+	target = get_target(target, depth=2)
 	parser = IntrospectedArgumentParser(target)
 	args = parser.parse_args(callable_values)
-
-	return args
-
-	args_w_keys = {key.replace('-', '_'): value for key, value in vars(args).items()}
-	callable_ = args_w_keys.pop('callable')
-	result = parser.run_callable(callable_=callable_, args_w_keys=args_w_keys)
+	args_w_keys = {key: value for key, value in vars(args).items()}
+	callable_ = args_w_keys.pop('__call__')
+	result = callable_(**args_w_keys)
 
 	if isinstance(result, str):
 		LOGGER.debug('The result is a string. Printing it as is.')
@@ -332,81 +77,3 @@ def main(target=None, sys_argv=None):
 		else:
 			LOGGER.debug('The result is an object. Printing it with pprint.')
 			pretty_print(result, width=PPRINT_WIDTH)
-
-	return
-
-	result = IntrospectedArgumentParser(target)
-	# print(result)
-	return result
-
-	caller = getmodule(stack()[1][0])
-	LOGGER.debug('Got caller: %s', caller)
-
-	if target is None:
-		LOGGER.debug('Target not defined, using caller "%s" as target', caller)
-		target = caller
-	elif isinstance(target, str):
-		LOGGER.debug('Identifying string defined target: %s', target)
-		if target in sys.modules:
-			LOGGER.debug('Target is a loaded module: %s', target)
-			target = sys.modules[target]
-		elif hasattr(caller, target):
-			LOGGER.debug('Target is a member of caller: %s.%s', caller, target)
-			target = getattr(caller, target)
-		else:
-			try:
-				target = __import__(target)
-				LOGGER.debug('Target is a loadable module: %s', target)
-			except ModuleNotFoundError:
-				raise ValueError('Target "{}" could not be identified'.format(target))
-	else:
-		LOGGER.debug('Target is an object: %s', target)
-
-	result = ArgparseParser.from_callable(target)
-	# print(result)
-	return result
-
-	arg_parser_data = BUILTIN_ARGPARSE_OPTIONS.copy()
-	try:
-		if inspect.ismodule(target):
-			LOGGER.debug('Generating parser data for target as a module')
-			arg_parser_data.update(module_args(target))
-		elif inspect.isclass(target):
-			LOGGER.debug('Generating parser data for target as a class')
-			arg_parser_data.update(class_args(target))
-		else:
-			LOGGER.debug('Generating parser data for target as a callable')
-			arg_parser_data.update(callable_args(target))
-	except Exception as error:
-		raise ValueError("Main's target ({}) is not supported: {}".format(target, error))
-
-	LOGGER.debug('Parser object tree is: %s', arg_parser_data)
-	# pprint.pprint(arg_parser_data)
-	keyword_args = DEFAULT_ARGUMENT_PARSER[2].copy()
-	if None in arg_parser_data:
-		keyword_args.update(arg_parser_data[None])
-	args = build_parser(parser_content=arg_parser_data, argument_parser=DEFAULT_ARGUMENT_PARSER[0](*DEFAULT_ARGUMENT_PARSER[1], **keyword_args)).parse_args(sys_argv)
-	LOGGER.debug('Complete input before CLI merge: %s', complete_input)
-	complete_input.update(vars(args))
-	LOGGER.debug('Complete input is: %s', complete_input)
-
-	if hasattr(args, '__simplifiedapp_'):
-		if len(args.__simplifiedapp_) == 2:
-			instance_call, method_call = args.__simplifiedapp_
-			instance = run_call(instance_call, complete_input)
-			result = run_call(method_call, complete_input, parent=instance)
-		else:
-			result = run_call(args.__simplifiedapp_, complete_input)
-	else:
-		raise RuntimeError('No executable/callable was found')
-
-	if isinstance(result, str):
-		LOGGER.debug('The result is a string. Printing it as is.')
-		print(result, end='')
-	else:
-		if hasattr(args, 'json') and args.json:
-			LOGGER.debug('The result is an object. Printing it as a json string.')
-			print(json.dumps(result, default=args._json_default if hasattr(args, '_json_default') else str))
-		else:
-			LOGGER.debug('The result is an object. Printing it with pprint.')
-			pprint.pprint(result, width=PPRINT_WIDTH)
