@@ -8,7 +8,7 @@ from unittest import TestCase
 from fixtures.functions import *
 from fixtures.classes import *
 from fixtures import fixture_empty_module, fixture_module_w_callable, fixture_module_w_class, fixture_module_w_private_callable
-from simplifiedapp.introspection_patched import list_callable_children
+from simplifiedapp._introspection import list_callable_children
 
 class TestExecuteCallableCallableChildren(TestCase):
 	"""
