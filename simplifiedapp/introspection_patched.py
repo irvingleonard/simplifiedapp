@@ -1,16 +1,13 @@
 #! python
-"""A simple way to run your python code from the CLI
-The module uses introspection to try and expose your code to the command line. It won't work in all cases, it depends on the complexity of your code.
-
-ToDo:
-- Everything
+"""Extension to the introspection module
+These are some patches and some other net new additions for the "introspection" module.
 """
 
 from enum import Enum
 from importlib import import_module
-from inspect import getmembers, getmodule, isclass, ismethod, stack as inspect_stack
+from inspect import isclass, ismethod
 from logging import getLogger
-from sys import modules
+from pathlib import Path
 from types import FunctionType, MethodType
 from warnings import warn
 
@@ -24,18 +21,21 @@ except ImportError:
 
 LOGGER = getLogger(__name__)
 
-def object_metadata(obj):
+def object_metadata(obj, /, param_attributes=('default','description','is_optional','type_name'), return_attributes=('description','is_generator','return_name','type_name')):
 	"""Gets metadata from an object
-	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring.
+	It tries to get some meta information from the provided object by leveraging the object's details (name and version) and whatever can be learned from the docstring (using the optional "docstring_parser" module).
 
 	:param obj: The object to build the metadata for
+	:type obj: Any
+	:param param_attributes: attributes to include from the parsing of the parameters
+	:type param_attributes: iterable
+	:param return_attributes: attributes to include from the parsing of the return
+	:type return_attributes: iterable
 	:returns dict: dictionary containing metadata details
 	"""
 
-	DOCSTRING_PARAM_ATTRS = ('default', 'description', 'is_optional', 'type_name')
-	DOCSTRING_RETURN_ATTRS = ('description', 'is_generator', 'return_name', 'type_name')
 
-	metadata = {'name' : obj.__name__}
+	metadata = {'name' : Path(obj.__file__).name if obj.__name__ == '__main__' and hasattr(obj, '__file__') else obj.__name__}
 
 	if hasattr(obj, '__version__'):
 		metadata['version'] = obj.__version__
@@ -50,7 +50,7 @@ def object_metadata(obj):
 			docstring_params = {}
 			for param in docstring.params:
 				docstring_param = {}
-				for param_attr in DOCSTRING_PARAM_ATTRS:
+				for param_attr in param_attributes:
 					docstring_param_attr = getattr(param, param_attr)
 					if docstring_param_attr is not None:
 						docstring_param[param_attr] = docstring_param_attr
@@ -58,7 +58,7 @@ def object_metadata(obj):
 			metadata['parameters'] = docstring_params
 		if docstring.returns:
 			docstring_return = {}
-			for return_attr in DOCSTRING_RETURN_ATTRS:
+			for return_attr in return_attributes:
 				docstring_return_attr = getattr(docstring.returns, return_attr)
 				if docstring_return_attr is not None:
 					docstring_return[return_attr] = docstring_return_attr
@@ -87,7 +87,7 @@ def signature_variable_keyword_parameter(self):
 Signature.variable_keyword_parameter = property(signature_variable_keyword_parameter)
 
 @classmethod
-def signature_from_class(cls, class_):
+def signature_from_class(cls, class_, /):
 	"""Get the signature for the provided class
 	Instantiating a class requires the execution of two different methods with the very same arguments. The signature for such "call" would be the merger of the signature of both methods.
 
@@ -169,63 +169,6 @@ def signature_from_class(cls, class_):
 
 	return Signature(parameters=pos_params+kw_params, forward_ref_context=class_.__module__)
 Signature.from_class = signature_from_class
-
-
-def list_callable_children(object_):
-	"""Enumerate this callable's functions and classes
-	Use introspection to indentify all the classes and function members of this callable. It will ignore all dunder methods except for "__call__".
-
-	:returns tuple: the list of functions and the list of classes
-	"""
-
-	functions, classes = [], []
-	for name, attr in getmembers(object_):
-		if (name in ('__call__',)) or (name[:2] != '__'):
-			if isclass(attr):
-				classes.append(attr)
-			elif callable(attr):
-				functions.append(attr)
-	return functions, classes
-
-def get_target(target=None):
-	"""Figure out the target and its type
-	Use introspection to find the caller. It wouldn't be the caller to this function but the caller to this function's caller or whatever is passed as parameter.
-
-	:param target: Optionally pass the target (just passthrough) or as a string to resolve
-	:returns tuple: the target and the corresponding IS_FUNCTION, IS_CLASS, or IS_MODULE
-	"""
-
-	caller = inspect_stack()
-	if len(caller) < 2:
-		caller = None
-	else:
-		caller = getmodule(caller[2][0])
-		LOGGER.debug('Got caller: %s', caller)
-
-	if target is None:
-		if caller is None:
-			raise RuntimeError('Unsupported shallow call to "get_target" without a target')
-		else:
-			LOGGER.debug('Target not defined, using caller "%s" as target', caller)
-			target = caller
-	elif isinstance(target, str):
-		LOGGER.debug('Identifying string defined target: %s', target)
-		if hasattr(caller, target):
-			LOGGER.debug('Target is a member of caller: %s.%s', caller, target)
-			target = getattr(caller, target)
-		elif target in modules:
-			LOGGER.debug('Target is a loaded module: %s', target)
-			target = modules[target]
-		else:
-			try:
-				target = import_module(target)
-				LOGGER.debug('Target is a loadable module: %s', target)
-			except ModuleNotFoundError:
-				raise ValueError(f'Target "{target}" could not be identified')
-	else:
-		LOGGER.debug('Target is an object: %s', target)
-
-	return target
 
 
 class CallableType(Enum):
@@ -333,6 +276,10 @@ class Callable:
 				value = self.parents[0]
 			else:
 				value = None
+		elif (item == 'parent_metadata') and (self.parent is not None):
+			value = object_metadata(self.parent)
+		elif item[:7] == 'parent_':
+			return self.parent_metadata[item[7:]]
 		elif item in ('signature', 'type'):
 			signature, type_ = self._get_signature_detect_type()
 			if item == 'signature':
